@@ -1,0 +1,58 @@
+<mujoco>
+    <compiler angle="radian" meshdir="./meshes/" texturedir="./textures" autolimits="true" />
+    <option integrator="implicit" />
+    <option timestep="0.002">
+        <flag warmstart="enable"></flag>
+    </option>
+
+    <include file="shared.xml" />
+
+    <worldbody>
+
+        <geom name="ground" pos="0 0 0" size="5 5 10" material="MatGnd" type="plane" contype="1"
+            conaffinity="1" />
+        <body name="ground" pos="0 0 0">
+            <site name="target0" pos="0.15 0.15 0.81" size="0.01 0.01 0.01" rgba="0 1 0 1"
+                type="sphere"></site>
+        </body>
+
+        <body name="table" pos="0 0 0.4">
+            <geom pos="0 0 0" size="0.4 0.4 0.4" type="box" group="0" mass="2000"
+                material="table_mat" />
+        </body>
+
+        <include file="mycobot280.xml" />
+
+        <body name="object0" pos="-0.23 0 0.81">
+            <joint name="object0:joint" type="free" damping="0.01"></joint>
+            <geom size="0.01 0.01 0.01" type="box" condim="3" name="object0" material="block_mat"
+                mass="2"></geom>
+            <site name="object0" pos="0 0 0" size="0.01 0.01 0.01" rgba="1 0 0 1" type="sphere"></site>
+        </body>
+        <light directional="true" ambient="0.5 0.5 0.5" diffuse="0.8 0.8 0.8" specular="0.3 0.3 0.3"
+            castshadow="false" pos="0 0 4" dir="0 0 -1" name="light0"></light>
+
+    </worldbody>
+    <actuator>
+        <general class="mycobot" name="actuator1" joint="joint1" gainprm="4500"
+            biasprm="0 -4500 -450" />
+        <general class="mycobot" name="actuator2" joint="joint2" gainprm="4500"
+            biasprm="0 -4500 -450"
+        />
+        <general class="mycobot" name="actuator3" joint="joint3" gainprm="3500"
+            biasprm="0 -3500 -350" />
+        <general class="mycobot" name="actuator4" joint="joint4" gainprm="3500"
+            biasprm="0 -3500 -350"
+        />
+        <general class="mycobot" name="actuator5" joint="joint5" gainprm="2000"
+            biasprm="0 -2000 -200"
+            forcerange="-12 12" />
+        <general class="mycobot" name="actuator6" joint="joint6" gainprm="2000"
+            biasprm="0 -2000 -200"
+            forcerange="-12 12" />
+
+        <general biastype="affine" name="fingers_actuator" tendon="split" forcerange="-10 10"
+            ctrlrange="0 1" gainprm="80 0 0" biasprm="0 -100 -10" forcelimited="true"
+            ctrllimited="true" />
+    </actuator>
+</mujoco>
