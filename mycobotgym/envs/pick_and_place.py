@@ -343,6 +343,8 @@ class PickAndPlaceEnv(MujocoEnv):
 
     def compute_terminated(self, achieved_goal, desired_goal, info):
         """All the available environments are currently continuing tasks and non-time dependent. The objective is to reach the goal for an indefinite period of time."""
+        if info["is_success"]:
+            return True
         return False
 
     def compute_truncated(self, achievec_goal, desired_goal, info):
