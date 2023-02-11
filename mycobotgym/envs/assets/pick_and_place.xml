@@ -1,6 +1,5 @@
 <mujoco>
-    <compiler angle="radian" meshdir="./meshes/" texturedir="./textures" autolimits="true" />
-    <!-- <option integrator="implicit" /> -->
+    <compiler angle="radian" meshdir="./meshes/" texturedir="./textures" />
     <option timestep="0.002" impratio="10">
         <flag warmstart="enable"></flag>
     </option>

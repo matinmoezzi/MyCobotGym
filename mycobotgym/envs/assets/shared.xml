@@ -57,17 +57,19 @@
 
     <default>
         <default class="mycobot">
-            <joint armature="0.1" damping="1" range="-2.96706 2.96706" />
+            <joint armature="0.1" damping="1" frictionloss="0" stiffness="0"
+                range="-2.96706 2.96706"
+                limited="true" />
             <general dyntype="none" biastype="affine" ctrlrange="-2.96706 2.96706"
-                forcerange="-87 87" />
+                forcerange="-87 87" forcelimited="true" ctrllimited="true" />
         </default>
         <default class="driver">
             <joint range="0 1" armature="0.005" damping="0.1" solimplimit="0.95 0.99 0.001"
-                solreflimit="0.005 1" />
+                solreflimit="0.005 1" limited="true" />
         </default>
         <default class="follower">
             <joint range="-0.872664 0.872664" pos="0 0 0" solimplimit="0.95 0.99 0.001"
-                solreflimit="0.005 1" />
+                solreflimit="0.005 1" limited="true" />
         </default>
     </default>
 </mujoco>
