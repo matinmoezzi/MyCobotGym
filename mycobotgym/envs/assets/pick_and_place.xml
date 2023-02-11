@@ -1,7 +1,7 @@
 <mujoco>
     <compiler angle="radian" meshdir="./meshes/" texturedir="./textures" autolimits="true" />
-    <option integrator="implicit" />
-    <option timestep="0.002">
+    <!-- <option integrator="implicit" /> -->
+    <option timestep="0.002" impratio="10">
         <flag warmstart="enable"></flag>
     </option>
 
@@ -25,8 +25,9 @@
 
         <body name="object0" pos="-0.23 0 0.81">
             <joint name="object0:joint" type="free" damping="0.01"></joint>
-            <geom size="0.01 0.01 0.01" type="box" condim="3" name="object0" material="block_mat"
-                mass="2"></geom>
+            <geom size="0.01 0.01 0.01" type="box" condim="4" name="object0" material="block_mat"
+                friction="0.7" solref="0.004 1"
+                solimp="0.95 0.99 0.001"></geom>
             <site name="object0" pos="0 0 0" size="0.01 0.01 0.01" rgba="1 0 0 1" type="sphere"></site>
         </body>
         <light directional="true" ambient="0.5 0.5 0.5" diffuse="0.8 0.8 0.8" specular="0.3 0.3 0.3"

@@ -27,7 +27,7 @@
     <contact>
         <!-- <exclude body1="link6" body2="left_gear_link" />
         <exclude body1="link6"
-        body2="right_gear_link" />
+            body2="right_gear_link" />
         <exclude body1="link6" body2="left_hinge_link" />
         <exclude body1="link6" body2="right_hinge_link" /> -->
         <exclude body1="right_finger_link" body2="right_hinge_link" />
@@ -51,6 +51,8 @@
             solimp="0.95 0.99 0.001" solref="0.005 1" />
         <joint joint1="right_gear_joint" joint2="left_gear_joint" polycoef="0 1 0 0 0"
             solimp="0.95 0.99 0.001" solref="0.005 1" />
+        <weld name="mocap_weld" body1="mocap" body2="gripper_tcp" solimp="0.9 0.95 0.001"
+            solref="0.02 1"></weld>
     </equality>
 
     <default>

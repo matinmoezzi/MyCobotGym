@@ -1,3 +1,4 @@
+from typing import Literal
 import mujoco
 from os import path
 import numpy as np
@@ -32,7 +33,7 @@ class PickAndPlaceEnv(MujocoEnv):
     metadata = {"render_modes": [
         "human", "rgb_array", "depth_array"], "render_fps": 10}
 
-    def __init__(self, model_path: str = "./assets/pick_and_place.xml", has_object=True, block_gripper=False, control_steps=5, ik_controller: bool = True, gripper_extra_height=0, target_in_the_air=True, distance_threshold=0.05, reward_type="sparse", frame_skip: int = 50, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
+    def __init__(self, model_path: str = "./assets/pick_and_place.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint'] = 'mocap', gripper_extra_height=0, target_in_the_air=True, distance_threshold=0.05, reward_type="sparse", frame_skip: int = 50, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
 
         self.gripper_extra_height = gripper_extra_height
         self.block_gripper = block_gripper
@@ -41,7 +42,7 @@ class PickAndPlaceEnv(MujocoEnv):
         self.distance_threshold = distance_threshold
         self.reward_type = reward_type
         self.control_steps = control_steps
-        self.ik_controller = ik_controller
+        self.controller_type = controller_type
         self.goal = np.zeros(0)
 
         xml_file_path = path.join(
@@ -67,13 +68,28 @@ class PickAndPlaceEnv(MujocoEnv):
         if self.has_object:
             self.height_offset = mujoco_utils.get_site_xpos(
                 self.model, self.data, "object0")[2]
-        if ik_controller:
+
+        if self.controller_type == 'IK':
             self.controller = IKController(self.model, self.data)
             action_size = 7  # 3 translation + 3 rotation + 1 gripper
-
-        else:
+        elif self.controller_type == 'joint':
             self.controller = None
             action_size = 7  # 6 joint positions + 1 gripper
+        elif self.controller_type == 'mocap':
+            self.controller = None
+            action_size = 4  # 3 end effector position + 1 gripper
+
+            mujoco_utils.reset_mocap_welds(self.model, self.data)
+            mujoco.mj_forward(self.model, self.data)
+
+            tcp_pos = mujoco_utils.get_site_xpos(self.model, self.data, 'EEF')
+            mujoco_utils.set_mocap_pos(self.model, self.data, 'mocap', tcp_pos)
+            mujoco_utils.set_mocap_quat(
+                self.model, self.data, 'mocap', np.array([1, 0, 1, 0]))
+
+            for _ in range(10):
+                mujoco.mj_step(self.model, self.data,
+                               nsubstep=self.control_steps)
 
         self.model_names = MujocoModelNames(self.model)
 
@@ -102,9 +118,10 @@ class PickAndPlaceEnv(MujocoEnv):
         self.actuation_center = (ctrlrange[:, 1] + ctrlrange[:, 0]) / 2.0
 
     def step(self, action):
-        action = np.clip(action, self.action_space.low, self.action_space.high)
+        # action = np.clip(action, self.action_space.low, self.action_space.high)
 
-        if self.controller is not None:
+        if self.controller_type == 'IK':
+            assert self.controller is not None
             current_eef_pose = self.data.site_xpos[
                 self.model_names.site_name2id["EEF"]
             ].copy()
@@ -146,7 +163,9 @@ class PickAndPlaceEnv(MujocoEnv):
 
                 if self.render_mode == "human":
                     self.render()
-        else:
+        elif self.controller_type == "mocap":
+            pass
+        elif self.controller_type == 'joint':
             # Denormalize the input action from [-1, 1] range to the each actuators control range
             self.data.ctrl[:] = self.actuation_center + \
                 action * self.actuation_range
