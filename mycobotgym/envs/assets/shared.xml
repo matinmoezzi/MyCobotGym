@@ -25,6 +25,8 @@
     </asset>
 
     <contact>
+        <exclude body1="table" body2="mycobot" />
+        <exclude body1="table" body2="ground" />
         <exclude body1="link6" body2="left_gear_link" />
         <exclude body1="link6"
             body2="right_gear_link" />
@@ -33,6 +35,7 @@
         <exclude body1="right_finger_link" body2="right_hinge_link" />
         <exclude body1="left_finger_link" body2="left_hinge_link" />
         <exclude body1="left_finger_link" body2="right_finger_link" />
+        <exclude body1="right_gear_link" body2="left_gear_link" />
     </contact>
 
     <tendon>
