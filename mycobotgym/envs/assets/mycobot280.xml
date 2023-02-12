@@ -1,10 +1,13 @@
 <mujoco>
-  <body mocap="true" name="mocap" pos="0 0 0">
+  <body mocap="true" name="mocap" pos="0.0138673 0.21864658 1.21236">
     <geom conaffinity="0" contype="0" pos="0 0 0" rgba="0 0.5 0 0.7" size="0.005 0.005 0.005"
       type="box"></geom>
-    <geom conaffinity="0" contype="0" pos="0 0 0" rgba="0 0.5 0 0.1" size="1 0.005 0.005" type="box"></geom>
-    <geom conaffinity="0" contype="0" pos="0 0 0" rgba="0 0.5 0 0.1" size="0.005 1 0.001" type="box"></geom>
-    <geom conaffinity="0" contype="0" pos="0 0 0" rgba="0 0.5 0 0.1" size="0.005 0.005 1" type="box"></geom>
+    <geom conaffinity="0" contype="0" pos="0 0 0" rgba="0 0.5 0 0.1" size="1 0.005 0.005"
+      type="box"></geom>
+    <geom conaffinity="0" contype="0" pos="0 0 0" rgba="0 0.5 0 0.1" size="0.005 1 0.001"
+      type="box"></geom>
+    <geom conaffinity="0" contype="0" pos="0 0 0" rgba="0 0.5 0 0.1" size="0.005 0.005 1"
+      type="box"></geom>
   </body>
   <!-- front view -->
   <camera name="frontview" pos="-1.175 -0.009 1.577"
@@ -84,7 +87,6 @@
                   <body name="gripper_base">
                     <site name="EEF" pos="0.13 -0.01 -0.001" rgba="0 0 1 1"
                       size="0.005 0.005 0.005" />
-                    <body name="gripper_tcp" pos="0.13 -0.01 -0.001"></body>
                     <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"
                       rgba="0.792157 0.819608 0.933333 1" mesh="gripper_base" />
                     <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="gripper_base" />
@@ -107,8 +109,9 @@
                           mesh="right_finger_link" />
                         <body name="right_finger_layer">
                           <geom type="box" size="0.013 0.01 0.001" pos="0.041 0.005 -0.021"
-                            condim="4" friction="0.7" solref="0.004 1"
-                            solimp="0.95 0.99 0.001"></geom>
+                            condim="4" friction="2"
+                            solref="-20000 -500"
+                            solimp="0.999 0.999 0.001"></geom>
                         </body>
                       </body>
                     </body>
@@ -130,15 +133,15 @@
                           mesh="left_finger_link" />
                         <body name="left_finger_layer">
                           <geom type="box" size="0.013 0.01 0.001" pos="0.041 0.005 0.021"
-                            condim="4" friction="0.7" solref="0.004 1"
-                            solimp="0.95 0.99 0.001"></geom>
+                            condim="4" friction="2" solref="-20000 -500"
+                            solimp="0.999 0.999 0.001"></geom>
                         </body>
                       </body>
                     </body>
                     <body name="right_hinge_link" pos="0.08443 -0.02005 0.005">
                       <inertial pos="0.00766814 0.00999994 0.0132034" quat="0.965593 0 0.260056 0"
                         mass="0.00272533" diaginertia="4.80195e-07 3.55161e-07 1.60795e-07" />
-                      <joint name="right_hinge_joint" pos="0 0 0" axis="0 1 0" />
+                      <joint name="right_hinge_joint" pos="0 0 0" axis="0 1 0" class="coupler" />
                       <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"
                         rgba="0.792157 0.819608 0.933333 1" mesh="right_hinge_link" />
                       <geom type="mesh" rgba="0.792157 0.819608 0.933333 1"
@@ -148,7 +151,7 @@
                       <inertial pos="0.00784767 0.00999994 -0.013651"
                         quat="0.966166 0 -0.257923 0"
                         mass="0.00272533" diaginertia="4.80195e-07 3.55161e-07 1.60795e-07" />
-                      <joint name="left_hinge_joint" pos="0 0 0" axis="0 1 0" />
+                      <joint name="left_hinge_joint" pos="0 0 0" axis="0 1 0" class="coupler" />
                       <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"
                         rgba="0.792157 0.819608 0.933333 1" mesh="left_hinge_link" />
                       <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="left_hinge_link" />
