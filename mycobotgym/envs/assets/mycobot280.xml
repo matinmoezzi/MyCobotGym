@@ -85,6 +85,7 @@
                       quat="0.5 -0.5 0.5 -0.5"></body>
                   </body>
                   <body name="gripper_base">
+                    <body name="gripper_tcp" pos="0.13 -0.01 -0.001" />
                     <site name="EEF" pos="0.13 -0.01 -0.001" rgba="0 0 1 1"
                       size="0.005 0.005 0.005" />
                     <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"

@@ -6,25 +6,26 @@ import mycobotgym.envs
 from gymnasium_robotics.utils import mujoco_utils
 
 
-# env = gym.make("FrankaKitchen-v1", render_mode="human")
+# env = gym.make("FetchPickAndPlace-v2", render_mode="human")
 env = gym.make("PickAndPlaceEnv-v0", render_mode="human")
 observation = env.reset(seed=42)
-for _ in range(10000):
-    object_pos = mujoco_utils.get_site_xpos(
-        env.model, env.data, "object0").copy()
-    current_eef_pose = env.data.site_xpos[
-        env.model_names.site_name2id["EEF"]
-    ].copy()
-    # object_pos = np.array([1, 1, 1])
-    displacement = (object_pos - current_eef_pose) / 0.2
-    action = np.zeros(7)
-    action[:3] = displacement
-    env.step(action)
+for geom1, geom2 in zip(env.data.contact.geom1, env.data.contact.geom2):
+    body1_id = env.model.geom_bodyid[geom1]
+    body2_id = env.model.geom_bodyid[geom2]
+    body1_name = mujoco.mj_id2name(
+        env.model, mujoco.mjtObj.mjOBJ_BODY, body1_id)
+    body2_name = mujoco.mj_id2name(
+        env.model, mujoco.mjtObj.mjOBJ_BODY, body2_id)
+    print(body1_name, body2_name)
+for i in range(1000):
+    if i % 10 == 0:
+        env.reset()
     env.render()
-# for i in range(1000):
-#     action = env.action_space.sample()  # User-defined policy function
-#     observation, reward, terminated, truncated, info = env.step(action)
-#     if i % 100 == 0:
+
+# action = env.action_space.sample()  # User-defined policy function
+# observation, reward, terminated, truncated, info = env.step(action)
+# env.step(action)
+# if i % 100 == 0:
 #         observation = env.reset()
 #     # frame = env.render(mode="rgb_array")
 #     # img = Image.fromarray(frame)

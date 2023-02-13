@@ -258,13 +258,9 @@ def main():
     viewer.cam.distance = 4
     viewer.cam.azimuth = 180.
     viewer.cam.elevation = 0
-    # postion offset
-    eef_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, "EEF")
-    eef_xpos = data.site_xpos[eef_id]
-    data.mocap_pos[0] = eef_xpos
 
     while True:
-        mujoco.mj_step(model, data)
+        mujoco.mj_step(model, data, nstep=10)
         viewer.render()
 
 
