@@ -1,6 +1,6 @@
 <mujoco>
     <compiler angle="radian" meshdir="./meshes/" texturedir="./textures" />
-    <option timestep="0.002" impratio="10">
+    <option timestep="0.002" impratio="10" cone="elliptic">
         <flag warmstart="enable"></flag>
     </option>
 
