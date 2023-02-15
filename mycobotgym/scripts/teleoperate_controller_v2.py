@@ -1,10 +1,13 @@
 from os import path
+from typing import Optional
 import mujoco
 from gymnasium_robotics.utils import mujoco_utils
 import glfw
 import numpy as np
 from gymnasium.envs.mujoco.mujoco_rendering import WindowViewer
 from enum import Enum
+from gymnasium_robotics.utils import rotations
+
 
 import numpy as np
 
@@ -12,6 +15,12 @@ import numpy as np
 class Direction(Enum):
     POS: int = 1
     NEG: int = -1
+
+
+class PrincipalAxis(Enum):
+    ROLL = 0
+    PITCH = 2
+    YAW = 1
 
 
 class MyCobotArmController:
@@ -23,6 +32,10 @@ class MyCobotArmController:
     [mocap_x, mocap_y, mocap_z, wrist_joint_angle, gripper_joint_angle]
     """
 
+    dof_dims = [PrincipalAxis.ROLL, PrincipalAxis.PITCH]
+    dof_dims_axes = [axis.value for axis in dof_dims]
+    alignment_axis: Optional[PrincipalAxis] = None
+
     # The max speed.
     MAX_SPEED = 1.0
 
@@ -32,7 +45,7 @@ class MyCobotArmController:
     SPEED_CHANGE_PERCENT = 0.2
 
     def __init__(self, model, data):
-        self._speeds = np.array([0.01, 5, 0.5])
+        self._speeds = np.array([0.01, 5, 0.5, 0.1])
         self.model = model
         self.data = data
 
@@ -57,6 +70,13 @@ class MyCobotArmController:
         """
         return self._speeds[2]
 
+    @property
+    def rot_speed(self):
+        """
+        The speed that wrist rotates.
+        """
+        return self._speeds[3]
+
     def zero_control(self):
         """
         Returns zero control, meaning gripper shouldn't move by applying this action.
@@ -79,6 +99,18 @@ class MyCobotArmController:
         self._speeds = np.maximum(
             self._speeds * (1 - self.SPEED_CHANGE_PERCENT), self.MIN_SPEED
         )
+
+    def get_tcp_quat(self, ctrl: np.ndarray) -> np.ndarray:
+        assert len(ctrl) == 2
+
+        euler = np.zeros(3)
+        euler[self.dof_dims_axes] = ctrl
+        quat = rotations.euler2quat(euler)
+        gripper_id = mujoco.mj_name2id(
+            self.model, mujoco.mjtObj.mjOBJ_BODY, 'gripper_tcp')
+        gripper_quat = self.data.xquat[gripper_id]
+
+        return rotations.quat_mul(gripper_quat, quat) - gripper_quat
 
     def move_x(self, direction: Direction) -> np.ndarray:
         """
@@ -113,25 +145,53 @@ class MyCobotArmController:
         """
         ctrl = self.zero_control()
         ctrl[-1] = self.gripper_speed * direction.value
-        self.data.ctrl += ctrl
+        self.data.ctrl = ctrl
+        mujoco.mj_step(self.model, self.data)
+
+    def rot_x(self, direction: Direction) -> np.ndarray:
+        """
+        Move gripper along x axis.
+        """
+        return self._rot(0, direction)
+
+    def rot_y(self, direction: Direction) -> np.ndarray:
+        """
+        Move gripper along y axis.
+        """
+        return self._rot(1, direction)
+
+    def rot_z(self, direction: Direction) -> np.ndarray:
+        """
+        Move gripper along z axis.
+        """
+        return self._rot(2, direction)
+
+    def _rot(self, axis: int, direction: Direction):
+        """
+        Move gripper along given axis and direction.
+        """
+        e = rotations.quat2euler(self.data.mocap_quat[0])
+        e[axis] += self.rot_speed * direction.value
+        quat = rotations.euler2quat(e)
+        self.data.mocap_quat[0] += quat
         mujoco.mj_step(self.model, self.data)
 
     def tilt_gripper(self, direction: Direction) -> np.ndarray:
         """
         Tilt the gripper
         """
-        ctrl = self.zero_control()
-        ctrl[-3] = self.arm_speed * direction.value
-        self.data.ctrl = ctrl
+        quat = self.get_tcp_quat(
+            np.array([self.wrist_speed * direction.value, 0]))
+        self.data.mocap_quat[0] += quat
         mujoco.mj_step(self.model, self.data)
 
     def rotate_wrist(self, direction: Direction) -> np.ndarray:
         """
         Rotate the wrist joint.
         """
-        ctrl = self.zero_control()
-        ctrl[-2] = self.wrist_speed * direction.value
-        self.data.ctrl = ctrl
+        quat = self.get_tcp_quat(
+            np.array([0, self.wrist_speed * direction.value]))
+        self.data.mocap_quat[0] += quat
         mujoco.mj_step(self.model, self.data)
 
 
@@ -160,7 +220,7 @@ class RobotControlViewer(WindowViewer):
         super().__init__(model, data)
 
     def _key_callback(self, window, key, scancode, action, mods):
-        if action == glfw.PRESS:
+        if action == glfw.PRESS or action == glfw.REPEAT:
             self._press_key_callback(window, key, scancode, mods)
         elif action == glfw.RELEASE:
             self._release_key_callback(window, key, scancode, mods)
@@ -185,14 +245,26 @@ class RobotControlViewer(WindowViewer):
             self.controller.move_y(Direction.NEG)
         elif key == glfw.KEY_RIGHT:
             self.controller.move_y(Direction.POS)
-        elif key == glfw.KEY_Q:
-            self.controller.rotate_wrist(Direction.POS)
-        elif key == glfw.KEY_W:
-            self.controller.rotate_wrist(Direction.NEG)
+        elif key == glfw.KEY_N:
+            self.controller.rot_x(Direction.POS)
+        elif key == glfw.KEY_M:
+            self.controller.rot_x(Direction.NEG)
+        elif key == glfw.KEY_R:
+            self.controller.rot_y(Direction.POS)
+        elif key == glfw.KEY_T:
+            self.controller.rot_y(Direction.NEG)
         elif key == glfw.KEY_Y:
-            self.controller.tilt_gripper(Direction.POS)
+            self.controller.rot_z(Direction.POS)
         elif key == glfw.KEY_U:
-            self.controller.tilt_gripper(Direction.NEG)
+            self.controller.rot_z(Direction.NEG)
+        # elif key == glfw.KEY_Q:
+        #     self.controller.rotate_wrist(Direction.POS)
+        # elif key == glfw.KEY_W:
+        #     self.controller.rotate_wrist(Direction.NEG)
+        # elif key == glfw.KEY_Y:
+        #     self.controller.tilt_gripper(Direction.POS)
+        # elif key == glfw.KEY_U:
+        #     self.controller.tilt_gripper(Direction.NEG)
         else:
             super()._key_callback(window, key, scancode, glfw.PRESS, mods)
 
@@ -210,6 +282,12 @@ class RobotControlViewer(WindowViewer):
             glfw.KEY_DOWN,
             glfw.KEY_LEFT,
             glfw.KEY_RIGHT,
+            glfw.KEY_N,
+            glfw.KEY_M,
+            glfw.KEY_R,
+            glfw.KEY_T,
+            glfw.KEY_Y,
+            glfw.KEY_U,
         ]:
             # Don't respond on release for sticky control keys.
             return
@@ -228,10 +306,14 @@ class RobotControlViewer(WindowViewer):
                          "Go up/down", "[Z]/[X]")
         self.add_overlay(mujoco.mjtGridPos.mjGRID_TOPRIGHT,
                          "Open/Close gripper", "[V]/[C]")
+        # self.add_overlay(mujoco.mjtGridPos.mjGRID_TOPRIGHT,
+        #                  "Rotate wrist CW/CCW", "[Q]/[W]")
         self.add_overlay(mujoco.mjtGridPos.mjGRID_TOPRIGHT,
-                         "Rotate wrist CW/CCW", "[Q]/[W]")
+                         "Rotate z axis", "[Y]/[U]")
         self.add_overlay(mujoco.mjtGridPos.mjGRID_TOPRIGHT,
-                         "Tilt Wrist", "[Y]/[U]")
+                         "Rotate y axis", "[R]/[T]")
+        self.add_overlay(mujoco.mjtGridPos.mjGRID_TOPRIGHT,
+                         "Rotate x axis", "[N]/[M]")
         self.add_overlay(mujoco.mjtGridPos.mjGRID_TOPRIGHT,
                          "Slow down/Speed up", "[-]/[=]")
 
@@ -253,9 +335,9 @@ def main():
     lookat = data.xpos[body_id]
     for idx, value in enumerate(lookat):
         viewer.cam.lookat[idx] = value
-    viewer.cam.distance = 4
-    viewer.cam.azimuth = 180.
-    viewer.cam.elevation = 0
+    viewer.cam.distance = 2
+    viewer.cam.azimuth = -90
+    viewer.cam.elevation = -35
 
     while True:
         mujoco.mj_step(model, data, nstep=10)
