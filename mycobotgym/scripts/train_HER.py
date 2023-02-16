@@ -5,7 +5,7 @@ from stable_baselines3 import SAC, HerReplayBuffer
 import mycobotgym.envs
 
 env = gymnasium.make("PickAndPlaceEnv-v0",
-                     render_mode="human", reward_type="dense")
+                     render_mode="human", reward_type="dense", controller_type="joint")
 
 model = SAC("MultiInputPolicy", env, replay_buffer_class=HerReplayBuffer, replay_buffer_kwargs=dict(
     n_sampled_goal=4,

@@ -31,9 +31,9 @@ def goal_distance(goal_a, goal_b):
 
 class PickAndPlaceEnv(MujocoEnv):
     metadata = {"render_modes": [
-        "human", "rgb_array", "depth_array"], "render_fps": 250}
+        "human", "rgb_array", "depth_array"], "render_fps": 20}
 
-    def __init__(self, model_path: str = "./assets/pick_and_place.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint'] = 'mocap', gripper_extra_height=0, target_in_the_air=True, distance_threshold=0.05, reward_type="sparse", frame_skip: int = 2, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
+    def __init__(self, model_path: str = "./assets/pick_and_place.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint'] = 'mocap', gripper_extra_height=0, target_in_the_air=True, distance_threshold=0.05, reward_type="sparse", frame_skip: int = 25, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
 
         self.gripper_extra_height = gripper_extra_height
         self.block_gripper = block_gripper
@@ -64,15 +64,30 @@ class PickAndPlaceEnv(MujocoEnv):
 
         self.init_ctrl = np.array([0, 0, 0, 0, 0, 0, 0])
 
-        mujoco_utils.reset_mocap_welds(self.model, self.data)
-        mujoco_utils.reset_mocap2body_xpos(self.model, self.data)
+        if self.controller_type == "mocap":
+            mujoco_utils.reset_mocap_welds(self.model, self.data)
+            mujoco_utils.reset_mocap2body_xpos(self.model, self.data)
+        else:
+            # Hide mocap geoms.
+            mocap_id = mujoco.mj_name2id(
+                self.model, mujoco.mjtObj.mjOBJ_BODY, "mocap")
+            mocap_geom_start_id = self.model.body_geomadr[mocap_id]
+            mocap_geom_end_id = (
+                mocap_geom_start_id + self.model.body_geomnum[mocap_id]
+            )
+            for geom_id in range(mocap_geom_start_id, mocap_geom_end_id):
+                self.model.geom_rgba[geom_id, :] = 0.0
+            # Disable the mocap weld constraint
+            if self.model.nmocap > 0 and self.model.eq_data is not None:
+                for i in range(self.model.eq_data.shape[0]):
+                    if self.model.eq_type[i] == mujoco.mjtEq.mjEQ_WELD:
+                        self.model.eq_active[i] = 0
+            mujoco.mj_forward(self.model, self.data)
 
         mujoco.mj_forward(self.model, self.data)
         if self.has_object:
             self.height_offset = mujoco_utils.get_site_xpos(
                 self.model, self.data, "object0")[2]
-        mujoco_utils.reset_mocap_welds(self.model, self.data)
-        mujoco.mj_forward(self.model, self.data)
 
         if self.controller_type == 'IK':
             self.controller = IKController(self.model, self.data)
@@ -211,8 +226,9 @@ class PickAndPlaceEnv(MujocoEnv):
                 self.model, self.data, "object0:joint", object_qpos
             )
 
-        mujoco_utils.reset_mocap_welds(self.model, self.data)
-        mujoco_utils.reset_mocap2body_xpos(self.model, self.data)
+        if self.controller_type == "mocap":
+            mujoco_utils.reset_mocap2body_xpos(self.model, self.data)
+            mujoco_utils.reset_mocap_welds(self.model, self.data)
         mujoco.mj_forward(self.model, self.data)
         self.goal = self._sample_goal().copy()
         while np.linalg.norm(np.array(self.goal) - np.array(object_qpos[:3])) < self.distance_threshold * 2:
