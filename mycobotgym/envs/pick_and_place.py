@@ -31,9 +31,9 @@ def goal_distance(goal_a, goal_b):
 
 class PickAndPlaceEnv(MujocoEnv):
     metadata = {"render_modes": [
-        "human", "rgb_array", "depth_array"], "render_fps": 20}
+        "human", "rgb_array", "depth_array"], "render_fps": 25}
 
-    def __init__(self, model_path: str = "./assets/pick_and_place.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint'] = 'mocap', gripper_extra_height=0, target_in_the_air=True, distance_threshold=0.05, reward_type="sparse", frame_skip: int = 25, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
+    def __init__(self, model_path: str = "./assets/pick_and_place.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint'] = 'mocap', gripper_extra_height=0, target_in_the_air=True, distance_threshold=0.05, reward_type="sparse", frame_skip: int = 20, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
 
         self.gripper_extra_height = gripper_extra_height
         self.block_gripper = block_gripper
@@ -127,8 +127,7 @@ class PickAndPlaceEnv(MujocoEnv):
         self.actuation_center = (ctrlrange[:, 1] + ctrlrange[:, 0]) / 2.0
 
     def step(self, action):
-        # action = np.clip(action, self.action_space.low, self.action_space.high)
-
+        action = np.clip(action, self.action_space.low, self.action_space.high)
         if self.controller_type == 'IK':
             assert self.controller is not None
             current_eef_pose = self.data.site_xpos[
