@@ -187,7 +187,7 @@ class PickAndPlaceEnv(MujocoEnv):
                 self.render()
         elif self.controller_type == 'joint':
             # Denormalize the input action from [-1, 1] range to the each actuators control range
-            self.data.ctrl[:] = self.actuation_center + \
+            action = self.actuation_center + \
                 action * self.actuation_range
             self.do_simulation(action, self.frame_skip)
             if self.render_mode == "human":

@@ -25,10 +25,15 @@ observation = env.reset(seed=42)
 for i in range(10000):
     # env.render()
     action = env.action_space.sample()  # User-defined policy function
+    observation, reward, terminated, truncated, info = env.step(action)
+    # env.data.ctrl = np.array(action)
+    # mujoco.mj_step(env.model, env.data, 20)
+    # env.render()
+
     # action = np.random.choice([1, -1], size=7)
 
     # action *= 2
-    observation, reward, terminated, truncated, info = env.step(action)
+    # observation, reward, terminated, truncated, info = env.step(action)
     if i % 1000 == 0:
         env.reset()
 
