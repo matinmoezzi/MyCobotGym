@@ -8,7 +8,7 @@ import argparse
 
 parser = argparse.ArgumentParser(
     prog="MyCobot-ReachObjectEnv-Dense-v0-SAC-HER")
-parser.add_argument("-t", "--total-timesteps", type=int, default=100)
+parser.add_argument("-t", "--total-timesteps", type=int, default=1000)
 parser.add_argument("-o", "--output-dir", type=str,
                     default="./trained_models/")
 parser.add_argument("--no-her", action='store_false')
