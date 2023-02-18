@@ -25,7 +25,7 @@
       <inertial pos="0.00714921 -2.49114e-06 0.0385507"
         quat="0.979105 -0.000345724 0.203355 0.000174858" mass="0.0427369"
         diaginertia="4.25453e-05 3.72465e-05 1.28094e-05" />
-      <joint name="joint1" pos="0 0 0" axis="0 0 -1" />
+      <joint name="robot0:joint1" pos="0 0 0" axis="0 0 -1" />
       <geom type="mesh" contype="1" conaffinity="1" group="1" density="0"
         rgba="0.792157 0.819608 0.933333 1" mesh="link1" />
       <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="link1" />
@@ -33,7 +33,7 @@
         <inertial pos="0.0195673 -3.76182e-08 0.0516249"
           quat="0.999998 9.2767e-05 -0.00200461 9.66169e-05" mass="0.0668491"
           diaginertia="0.000167029 0.000158388 2.06202e-05" />
-        <joint name="joint2" pos="0 0 0" axis="-1 0 0" />
+        <joint name="robot0:joint2" pos="0 0 0" axis="-1 0 0" />
         <geom type="mesh" contype="1" conaffinity="1" group="1" density="0"
           rgba="0.792157 0.819608 0.933333 1" mesh="link2" />
         <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="link2" />
@@ -41,7 +41,7 @@
           <inertial pos="-0.0231609 -5.61244e-07 0.0437186"
             quat="0.999737 3.49095e-05 -0.0229275 4.08218e-05" mass="0.0533251"
             diaginertia="0.000101777 9.73985e-05 1.35127e-05" />
-          <joint name="joint3" pos="0 0 0" axis="1 0 0" />
+          <joint name="robot0:joint3" pos="0 0 0" axis="1 0 0" />
           <geom type="mesh" contype="1" conaffinity="1" group="1" density="0"
             rgba="0.792157 0.819608 0.933333 1" mesh="link3" />
           <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="link3" />
@@ -49,7 +49,7 @@
             <inertial pos="0.0195553 1.43402e-05 0.00768729"
               quat="0.000387903 0.385562 0.000244078 0.922682" mass="0.0240612"
               diaginertia="1.10891e-05 9.32651e-06 4.46821e-06" />
-            <joint name="joint4" pos="0 0 0" axis="-1 0 0" />
+            <joint name="robot0:joint4" pos="0 0 0" axis="-1 0 0" />
             <geom type="mesh" contype="1" conaffinity="1" group="1" density="0"
               rgba="0.792157 0.819608 0.933333 1" mesh="link4" />
             <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="link4" />
@@ -57,7 +57,7 @@
               <inertial pos="2.48381e-05 -7.55802e-05 0.0267714"
                 quat="0.975475 0.00322907 0.220035 0.00469099" mass="0.0327884"
                 diaginertia="1.48708e-05 1.33354e-05 7.13883e-06" />
-              <joint name="joint5" pos="0 0 0" axis="0 0 -1" />
+              <joint name="robot0:joint5" pos="0 0 0" axis="0 0 -1" />
               <geom type="mesh" contype="1" conaffinity="1" group="1" density="0"
                 rgba="0.792157 0.819608 0.933333 1" mesh="link5" />
               <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="link5" />
@@ -66,7 +66,7 @@
                   quat="-0.179978 0.674045 0.238998 0.675389"
                   mass="0.0649501"
                   diaginertia="5.36781e-05 5.12254e-05 2.74582e-05" />
-                <joint name="joint6" pos="0 0 0" axis="-1 0 0" />
+                <joint name="robot0:joint6" pos="0 0 0" axis="-1 0 0" />
                 <geom type="mesh" contype="1" conaffinity="1" group="1" density="0"
                   rgba="0.792157 0.819608 0.933333 1" mesh="link6" />
                 <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="link6" />
@@ -95,14 +95,14 @@
                       <inertial pos="0.00313636 0.0026671 0.00586855"
                         quat="0.681896 0.190756 0.185171 0.681426" mass="0.00306867"
                         diaginertia="5.4546e-07 4.35596e-07 1.20909e-07" />
-                      <joint name="right_gear_joint" pos="0 0 0" axis="0 1 0" class="driver" />
+                      <joint name="robot0:right_gear_joint" pos="0 0 0" axis="0 1 0" class="driver" />
                       <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"
                         rgba="0.792157 0.819608 0.933333 1" mesh="right_gear_link" />
                       <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="right_gear_link" />
                       <body name="right_finger_link" pos="0.015573 -0.01 0.026804">
                         <inertial pos="0.0324451 0.005 -0.0109997" quat="0 0.775032 0 0.631922"
                           mass="0.00694636" diaginertia="1.60061e-06 1.45682e-06 2.82185e-07" />
-                        <joint name="right_finger_joint" pos="0 0 0" axis="0 -1 0"
+                        <joint name="robot0:right_finger_joint" pos="0 0 0" axis="0 -1 0"
                           class="follower" />
                         <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"
                           rgba="0.792157 0.819608 0.933333 1" mesh="right_finger_link" />
@@ -120,14 +120,15 @@
                       <inertial pos="0.00282687 0.00252761 -0.00562195"
                         quat="0.681488 -0.18894 -0.188164 0.68152" mass="0.00317605"
                         diaginertia="5.58215e-07 4.42379e-07 1.28181e-07" />
-                      <joint name="left_gear_joint" pos="0 0 0" axis="0 -1 0" class="driver" />
+                      <joint name="robot0:left_gear_joint" pos="0 0 0" axis="0 -1 0" class="driver" />
                       <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"
                         rgba="0.792157 0.819608 0.933333 1" mesh="left_gear_link" />
                       <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="left_gear_link" />
                       <body name="left_finger_link" pos="0.015455 -0.01 -0.026873">
                         <inertial pos="0.0324451 0.005 0.0109997" quat="0 0.631922 0 0.775032"
                           mass="0.00694636" diaginertia="1.60061e-06 1.45682e-06 2.82185e-07" />
-                        <joint name="left_finger_joint" pos="0 0 0" axis="0 1 0" class="follower" />
+                        <joint name="robot0:left_finger_joint" pos="0 0 0" axis="0 1 0"
+                          class="follower" />
                         <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"
                           rgba="0.792157 0.819608 0.933333 1" mesh="left_finger_link" />
                         <geom type="mesh" rgba="0.792157 0.819608 0.933333 1"
@@ -142,7 +143,8 @@
                     <body name="right_hinge_link" pos="0.08443 -0.02005 0.005">
                       <inertial pos="0.00766814 0.00999994 0.0132034" quat="0.965593 0 0.260056 0"
                         mass="0.00272533" diaginertia="4.80195e-07 3.55161e-07 1.60795e-07" />
-                      <joint name="right_hinge_joint" pos="0 0 0" axis="0 1 0" class="coupler" />
+                      <joint name="robot0:right_hinge_joint" pos="0 0 0" axis="0 1 0"
+                        class="coupler" />
                       <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"
                         rgba="0.792157 0.819608 0.933333 1" mesh="right_hinge_link" />
                       <geom type="mesh" rgba="0.792157 0.819608 0.933333 1"
@@ -152,7 +154,7 @@
                       <inertial pos="0.00784767 0.00999994 -0.013651"
                         quat="0.966166 0 -0.257923 0"
                         mass="0.00272533" diaginertia="4.80195e-07 3.55161e-07 1.60795e-07" />
-                      <joint name="left_hinge_joint" pos="0 0 0" axis="0 1 0" class="coupler" />
+                      <joint name="robot0:left_hinge_joint" pos="0 0 0" axis="0 1 0" class="coupler" />
                       <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"
                         rgba="0.792157 0.819608 0.933333 1" mesh="left_hinge_link" />
                       <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="left_hinge_link" />

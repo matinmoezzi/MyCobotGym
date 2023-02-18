@@ -32,20 +32,20 @@
 
     </worldbody>
     <actuator>
-        <general class="mycobot" name="actuator1" joint="joint1" gainprm="4500"
+        <general class="mycobot" name="actuator1" joint="robot0:joint1" gainprm="4500"
             biasprm="0 -4500 -450" forcerange="-500 500" />
-        <general class="mycobot" name="actuator2" joint="joint2" gainprm="4500"
+        <general class="mycobot" name="actuator2" joint="robot0:joint2" gainprm="4500"
             biasprm="0 -4500 -450"
         />
-        <general class="mycobot" name="actuator3" joint="joint3" gainprm="3500"
+        <general class="mycobot" name="actuator3" joint="robot0:joint3" gainprm="3500"
             biasprm="0 -3500 -350" />
-        <general class="mycobot" name="actuator4" joint="joint4" gainprm="3500"
+        <general class="mycobot" name="actuator4" joint="robot0:joint4" gainprm="3500"
             biasprm="0 -3500 -350"
         />
-        <general class="mycobot" name="actuator5" joint="joint5" gainprm="2000"
+        <general class="mycobot" name="actuator5" joint="robot0:joint5" gainprm="2000"
             biasprm="0 -2000 -200"
             forcerange="-12 12" />
-        <general class="mycobot" name="actuator6" joint="joint6" gainprm="2000"
+        <general class="mycobot" name="actuator6" joint="robot0:joint6" gainprm="2000"
             biasprm="0 -2000 -200"
             forcerange="-12 12" />
 
