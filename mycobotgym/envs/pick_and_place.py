@@ -200,8 +200,8 @@ class PickAndPlaceEnv(MujocoEnv):
         obs = self._get_obs()
 
         info = {
-            "is_success": self._is_success(obs["observation"][0], obs["achieved_goal"], self.goal),
-            "grip_pos": obs["observation"][0]
+            "is_success": self._is_success(obs["observation"][:3], obs["achieved_goal"], self.goal),
+            "grip_pos": obs["observation"][:3]
         }
         reward = self.compute_reward(obs["achieved_goal"], self.goal, info)
         terminated = self.compute_terminated(
@@ -216,7 +216,7 @@ class PickAndPlaceEnv(MujocoEnv):
                 self.mujoco_renderer.viewer.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "distance_object_target", "%.3f" %
                                                         goal_distance(obs["achieved_goal"], self.goal))
                 self.mujoco_renderer.viewer.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "distance_gripper_object", "%.3f" %
-                                                        goal_distance(obs["achieved_goal"], obs["observation"][0]))
+                                                        goal_distance(obs["achieved_goal"], obs["observation"][:3]))
             else:
                 self.mujoco_renderer.viewer.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "distance_gripper_target", "%.3f" %
                                                         goal_distance(obs["achieved_goal"], self.goal))
