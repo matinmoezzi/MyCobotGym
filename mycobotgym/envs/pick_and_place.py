@@ -365,7 +365,7 @@ class PickAndPlaceEnv(MujocoEnv):
         grip_pos = mujoco_utils.get_site_xpos(
             self.model, self.data, "EEF")
 
-        dt = self.control_steps * self.model.opt.timestep
+        dt = self.frame_skip * self.model.opt.timestep
         grip_velp = (
             mujoco_utils.get_site_xvelp(
                 self.model, self.data, "EEF") * dt
