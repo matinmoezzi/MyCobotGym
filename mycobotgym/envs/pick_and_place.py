@@ -33,7 +33,7 @@ class PickAndPlaceEnv(MujocoEnv):
     metadata = {"render_modes": [
         "human", "rgb_array", "depth_array"], "render_fps": 25}
 
-    def __init__(self, model_path: str = "./assets/pick_and_place.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint'] = 'mocap', gripper_extra_height=0, target_in_the_air=True, distance_threshold=0.05, reward_type="sparse", frame_skip: int = 20, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
+    def __init__(self, model_path: str = "./assets/pick_and_place.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint'] = 'mocap', gripper_extra_height=0, target_in_the_air=True, distance_threshold=0.05, height_offset: float = 0.81, reward_type="sparse", frame_skip: int = 20, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, reward_weight: int = 10, **kwargs) -> None:
 
         self.gripper_extra_height = gripper_extra_height
         self.block_gripper = block_gripper
@@ -43,6 +43,8 @@ class PickAndPlaceEnv(MujocoEnv):
         self.reward_type = reward_type
         self.control_steps = control_steps
         self.controller_type = controller_type
+        self.reward_weight = reward_weight
+        self.height_offset = height_offset
         self.goal = np.zeros(0)
 
         xml_file_path = path.join(
@@ -85,10 +87,16 @@ class PickAndPlaceEnv(MujocoEnv):
             mujoco.mj_forward(self.model, self.data)
 
         mujoco.mj_forward(self.model, self.data)
-        if self.has_object:
-            self.height_offset = mujoco_utils.get_site_xpos(
-                self.model, self.data, "object0")[2]
 
+        if not self.has_object:
+            object_id = mujoco.mj_name2id(
+                self.model, mujoco.mjtObj.mjOBJ_GEOM, 'object0')
+            site_id = mujoco.mj_name2id(
+                self.model, mujoco.mjtObj.mjOBJ_SITE, 'object0')
+            self.model.geom_size[object_id] = np.zeros(3)
+            self.model.site_size[site_id] = np.zeros(3)
+
+        mujoco.mj_forward(self.model, self.data)
         if self.controller_type == 'IK':
             self.controller = IKController(self.model, self.data)
             action_size = 7  # 3 translation + 3 rotation (euler) + 1 gripper
@@ -169,8 +177,6 @@ class PickAndPlaceEnv(MujocoEnv):
                 self.data.ctrl[:] = ctrl_action
                 mujoco.mj_step(self.model, self.data, nstep=self.frame_skip)
 
-                if self.render_mode == "human":
-                    self.render()
         elif self.controller_type == "mocap":
             mocap_action = action[:-1].copy()
             mocap_action[:3] *= MAX_CARTESIAN_DISPLACEMENT
@@ -183,28 +189,39 @@ class PickAndPlaceEnv(MujocoEnv):
             )
             self.data.ctrl[-1] = gripper_action
             mujoco.mj_step(self.model, self.data, nstep=self.frame_skip)
-            if self.render_mode == "human":
-                self.render()
         elif self.controller_type == 'joint':
             # Denormalize the input action from [-1, 1] range to the each actuators control range
             action = self.actuation_center + \
                 action * self.actuation_range
             self.do_simulation(action, self.frame_skip)
-            if self.render_mode == "human":
-                self.render()
 
         self._step_callback()
 
         obs = self._get_obs()
 
         info = {
-            "is_success": self._is_success(obs["achieved_goal"], self.goal),
+            "is_success": self._is_success(obs["observation"][0], obs["achieved_goal"], self.goal),
+            "grip_pos": obs["observation"][0]
         }
         reward = self.compute_reward(obs["achieved_goal"], self.goal, info)
         terminated = self.compute_terminated(
             obs["achieved_goal"], obs["desired_goal"], info)
         truncated = self.compute_truncated(
             obs["achieved_goal"], obs["desired_goal"], info)
+
+        self.mujoco_renderer.viewer.add_overlay(
+            mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "is_success", str(info["is_success"]))
+        if self.has_object:
+            self.mujoco_renderer.viewer.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "distance_object_target", "%.3f" %
+                                                    goal_distance(obs["achieved_goal"], self.goal))
+            self.mujoco_renderer.viewer.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "distance_gripper_object", "%.3f" %
+                                                    goal_distance(obs["achieved_goal"], obs["observation"][0]))
+        else:
+            self.mujoco_renderer.viewer.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "distance_gripper_target", "%.3f" %
+                                                    goal_distance(obs["achieved_goal"], self.goal))
+
+        if self.render_mode == "human":
+            self.render()
         return obs, reward, terminated, truncated, info
 
     def reset_model(self):
@@ -230,8 +247,11 @@ class PickAndPlaceEnv(MujocoEnv):
             mujoco_utils.reset_mocap_welds(self.model, self.data)
         mujoco.mj_forward(self.model, self.data)
         self.goal = self._sample_goal().copy()
-        while np.linalg.norm(np.array(self.goal) - np.array(object_qpos[:3])) < self.distance_threshold * 2:
-            self.goal = self._sample_goal().copy()
+
+        if self.has_object:
+            # Make sure that the target is far from object enough
+            while np.linalg.norm(np.array(self.goal) - np.array(object_qpos[:3])) < self.distance_threshold * 2:
+                self.goal = self._sample_goal().copy()
 
         obs = self._get_obs()
         return obs
@@ -293,17 +313,30 @@ class PickAndPlaceEnv(MujocoEnv):
             "desired_goal": self.goal.copy(),
         }
 
-    def _is_success(self, achieved_goal, desired_goal):
+    def _is_success(self, grip_pos, achieved_goal, desired_goal):
         d = goal_distance(achieved_goal, desired_goal)
-        return (d < self.distance_threshold).astype(np.float32)
+        if self.has_object:
+            r = goal_distance(grip_pos, achieved_goal)
+            return (d < self.distance_threshold or r < self.distance_threshold).astype(np.float32)
+        else:
+            return (d < self.distance_threshold).astype(np.float32)
 
     def compute_reward(self, achieved_goal, goal, info):
         # Compute distance between goal and the achieved goal.
         d = goal_distance(achieved_goal, goal)
-        if self.reward_type == "sparse":
-            return -(d > self.distance_threshold).astype(np.float32)
+        if self.has_object:
+            # Compute distance between gripper and the achieved goal (object).
+            r = goal_distance(info["grip_pos"], achieved_goal)
+            if self.reward_type == "sparse":
+                return -(d > self.distance_threshold or r > self.distance_threshold).astype(np.float32)
+            elif self.reward_type == "dense":
+                return (-d) + (-self.reward_weight * r)
+
         else:
-            return -d
+            if self.reward_type == "sparse":
+                return -(d > self.distance_threshold).astype(np.float32)
+            elif self.reward_type == "dense":
+                return -d
 
     def _step_callback(self):
         if self.block_gripper:
