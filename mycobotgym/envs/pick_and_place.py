@@ -209,18 +209,17 @@ class PickAndPlaceEnv(MujocoEnv):
         truncated = self.compute_truncated(
             obs["achieved_goal"], obs["desired_goal"], info)
 
-        self.mujoco_renderer.viewer.add_overlay(
-            mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "is_success", str(info["is_success"]))
-        if self.has_object:
-            self.mujoco_renderer.viewer.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "distance_object_target", "%.3f" %
-                                                    goal_distance(obs["achieved_goal"], self.goal))
-            self.mujoco_renderer.viewer.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "distance_gripper_object", "%.3f" %
-                                                    goal_distance(obs["achieved_goal"], obs["observation"][0]))
-        else:
-            self.mujoco_renderer.viewer.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "distance_gripper_target", "%.3f" %
-                                                    goal_distance(obs["achieved_goal"], self.goal))
-
         if self.render_mode == "human":
+            self.mujoco_renderer.viewer.add_overlay(
+                mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "is_success", str(info["is_success"]))
+            if self.has_object:
+                self.mujoco_renderer.viewer.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "distance_object_target", "%.3f" %
+                                                        goal_distance(obs["achieved_goal"], self.goal))
+                self.mujoco_renderer.viewer.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "distance_gripper_object", "%.3f" %
+                                                        goal_distance(obs["achieved_goal"], obs["observation"][0]))
+            else:
+                self.mujoco_renderer.viewer.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "distance_gripper_target", "%.3f" %
+                                                        goal_distance(obs["achieved_goal"], self.goal))
             self.render()
         return obs, reward, terminated, truncated, info
 
