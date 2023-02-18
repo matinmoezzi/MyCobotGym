@@ -19,7 +19,7 @@ def print_contacts(model, data):
 
 # env = gym.make("FetchPickAndPlace-v2", render_mode="human")
 # env = gym.make("FrankaKitchen-v1", render_mode="human", ik_controller=False)
-env = gym.make("PickAndPlaceEnv-v0", render_mode="human",
+env = gym.make("ReachObjectEnv-Dense-v0", render_mode="human",
                controller_type="joint", has_object=False)
 observation = env.reset(seed=42)
 for i in range(10000):
