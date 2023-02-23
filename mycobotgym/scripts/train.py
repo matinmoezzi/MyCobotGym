@@ -2,7 +2,7 @@ import datetime
 import gymnasium
 import sys
 sys.modules["gym"] = gymnasium
-from stable_baselines3 import SAC, HerReplayBuffer, TD3, PPO, DDPG
+from stable_baselines3 import SAC, HerReplayBuffer, TD3, PPO, DDPG, A2C
 import mycobotgym.envs
 import argparse
 import multiprocessing
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="MyCobot-Train")
 
     parser.add_argument("-t", "--total-timesteps", type=int,
-                        default=1000, help="Total timesteps for training")
+                        default=1000, help="Total timesteps for training per env")
     parser.add_argument("-i", "--log-interval", type=int,
                         default=1, help="Number episodes before logging")
     parser.add_argument("-n", "--num-env", type=int, default=num_cpu,
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     parser.add_argument("--her", action='store_true',
                         help="Enable Hindsight Experience Replay")
     parser.add_argument("--algo", type=str, default="SAC",
-                        choices=["SAC", "DDPG", "TD3", "PPO"], help="Training algorithm [PPO, SAC, TD3, DDPG]")
+                        choices=["SAC", "DDPG", "TD3", "PPO", "A2C"], help="Training algorithm [PPO, SAC, TD3, DDPG]")
     parser.add_argument("-c", "--controller-type", type=str,
                         default="joint", choices=["joint", "mocap", "IK"], help="Controller type 1)Inverse Kinematics (IK) 2) Mocap 3) Joint position control")
     parser.add_argument("--human", action="store_true",
@@ -64,7 +64,7 @@ if __name__ == "__main__":
                         help="Verbosity level: 0 for no output, 1 for info messages (such as device or wrappers used), 2 for debug messages")
     args = parser.parse_args()
 
-    algos = {"PPO": PPO, "SAC": SAC, "DDPG": DDPG, "TD3": TD3}
+    algos = {"PPO": PPO, "SAC": SAC, "DDPG": DDPG, "TD3": TD3, "A2C": A2C}
 
     render_mode = "human" if args.human else None
 
@@ -85,12 +85,16 @@ if __name__ == "__main__":
         model = algos[args.algo]("MultiInputPolicy", env, replay_buffer_class=replay_buffer_cls,
                                  replay_buffer_kwargs=replay_buffer_dict, gradient_steps=-1, tensorboard_log=args.tensorboard_dir + out_name, verbose=args.verbose)
     else:
-        model = algos[args.algo](
-            "MultiInputPolicy", env, tensorboard_log=args.tensorboard_dir + out_name, verbose=args.verbose)
+        if args.algo in ["PPO", "A2C"]:
+            model = algos[args.algo](
+                "MultiInputPolicy", env, n_steps=args.total_timesteps, tensorboard_log=args.tensorboard_dir + out_name, verbose=args.verbose)
+        else:
+            model = algos[args.algo](
+                "MultiInputPolicy", env, tensorboard_log=args.tensorboard_dir + out_name, verbose=args.verbose, train_freq=(1, "step"))
 
-    model.learn(args.total_timesteps, progress_bar=True,
+    model.learn(args.total_timesteps * args.num_env, progress_bar=True,
                 log_interval=args.log_interval)
 
-    model.save(args.model_output_dir + out_name)
+    # model.save(args.model_output_dir + out_name)
 
     env.close()
