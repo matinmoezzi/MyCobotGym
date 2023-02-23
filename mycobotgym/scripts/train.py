@@ -11,7 +11,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.utils import set_random_seed
 
 
-def make_env(env_id, rank, log_dir, controller_type, seed=0):
+def make_env(env_id, rank, controller_type, seed=0):
     """
     Utility function for multiprocessed env.
 
@@ -21,9 +21,8 @@ def make_env(env_id, rank, log_dir, controller_type, seed=0):
     :param rank: (int) index of the subprocess
     """
     def _init():
-        env = gymnasium.make(
-            env_id, controller_type=controller_type, render_mode=render_mode)
-        Monitor(env, log_dir)
+        env = Monitor(gymnasium.make(
+            env_id, controller_type=controller_type, render_mode=render_mode))
         env.reset(seed=seed + rank)
         return env
     set_random_seed(seed)
@@ -60,7 +59,7 @@ if __name__ == "__main__":
                         help="Enable multiprocessor training")
     parser.add_argument("-e", "--env", type=str, default="ReachObjectEnv-Dense-v0", choices=[
                         "ReachObjectEnv-Dense-v0", "ReachObjectEnv-Sparse-v0", "PickAndPlaceEnv-Dense-v0", "PickAndPlaceEnv-Sparse-v0"], help="Environment")
-    parser.add_argument("-v", "--verbose", type=int, default=1,
+    parser.add_argument("-v", "--verbose", type=int, default=2,
                         help="Verbosity level: 0 for no output, 1 for info messages (such as device or wrappers used), 2 for debug messages")
     args = parser.parse_args()
 
@@ -72,7 +71,7 @@ if __name__ == "__main__":
 
     out_name = f"{args.env}-{args.total_timesteps:_d}-{args.algo}-{'HER-' if args.her else ''}{args.controller_type}-{vec_env_cls.__name__}-{datetime.datetime.now():%Y-%m-%d %H:%M:%S}"
 
-    env = vec_env_cls([make_env(args.env, i, args.log_dir, args.controller_type)
+    env = vec_env_cls([make_env(args.env, i, args.controller_type)
                        for i in range(args.num_env)])
 
     if args.her:
