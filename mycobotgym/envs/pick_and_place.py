@@ -173,7 +173,6 @@ class PickAndPlaceEnv(MujocoEnv):
 
                 # Do not use `do_simulation`` method from MujocoEnv: value error due to discrepancy between
                 # the action space and the simulation control input when using IK controller.
-                # TODO: eliminate error check in MujocoEnv (action space can be different from simulaton control input).
                 self.data.ctrl[:] = ctrl_action
                 mujoco.mj_step(self.model, self.data, nstep=self.frame_skip)
 
@@ -325,7 +324,11 @@ class PickAndPlaceEnv(MujocoEnv):
         d = goal_distance(achieved_goal, goal)
         if self.has_object:
             # Compute distance between gripper and the achieved goal (object).
-            r = goal_distance(info["grip_pos"], achieved_goal)
+            if isinstance(info, np.ndarray):
+                grip_pos = np.array([item['grip_pos'] for item in info])
+            else:
+                grip_pos = info["grip_pos"]
+            r = goal_distance(grip_pos, achieved_goal)
             if self.reward_type == "sparse":
                 return -(d > self.distance_threshold or r > self.distance_threshold).astype(np.float32)
             elif self.reward_type == "dense":

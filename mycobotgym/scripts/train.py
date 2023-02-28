@@ -94,6 +94,6 @@ if __name__ == "__main__":
     model.learn(args.total_timesteps * args.num_env, progress_bar=True,
                 log_interval=args.log_interval)
 
-    # model.save(args.model_output_dir + out_name)
+    model.save(args.model_output_dir + out_name)
 
     env.close()
