@@ -330,7 +330,7 @@ class PickAndPlaceEnv(MujocoEnv):
                 grip_pos = info["grip_pos"]
             r = goal_distance(grip_pos, achieved_goal)
             if self.reward_type == "sparse":
-                return -(d > self.distance_threshold or r > self.distance_threshold).astype(np.float32)
+                return -(d > self.distance_threshold).astype(np.float32)
             elif self.reward_type == "dense":
                 return (-d) + (-self.reward_weight * r)
 
