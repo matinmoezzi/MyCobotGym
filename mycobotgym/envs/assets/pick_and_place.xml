@@ -1,6 +1,6 @@
 <mujoco>
     <compiler angle="radian" meshdir="./meshes/" texturedir="./textures" />
-    <option timestep="0.002" impratio="10" cone="elliptic" />
+    <option timestep="0.002" impratio="10" integrator="implicit" />
 
     <include file="shared.xml" />
 
@@ -33,15 +33,15 @@
     </worldbody>
     <actuator>
         <general class="mycobot" name="actuator1" joint="robot0:joint1" gainprm="4500"
-            biasprm="0 -4500 -450" forcerange="-500 500" />
+            biasprm="0 -4500 -450" />
         <general class="mycobot" name="actuator2" joint="robot0:joint2" gainprm="4500"
             biasprm="0 -4500 -450"
         />
         <general class="mycobot" name="actuator3" joint="robot0:joint3" gainprm="3500"
             biasprm="0 -3500 -350" />
-        <general class="mycobot" name="actuator4" joint="robot0:joint4" gainprm="3500"
-            biasprm="0 -3500 -350"
-        />
+        <general class="mycobot" name="actuator4" joint="robot0:joint4" gainprm="2000"
+            biasprm="0 -2000 -200"
+            forcerange="-12 12" />
         <general class="mycobot" name="actuator5" joint="robot0:joint5" gainprm="2000"
             biasprm="0 -2000 -200"
             forcerange="-12 12" />
