@@ -67,7 +67,7 @@
                 forcerange="-87 87" forcelimited="true" ctrllimited="true" />
         </default>
         <default class="driver">
-            <joint range="0 0.8" armature="0.005" damping="0.1" solimplimit="0.95 0.99 0.001"
+            <joint range="0 0.7" armature="0.005" damping="0.1" solimplimit="0.95 0.99 0.001"
                 solreflimit="0.005 1" limited="true" />
         </default>
         <default class="follower">
