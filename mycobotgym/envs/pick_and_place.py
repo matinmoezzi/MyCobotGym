@@ -32,9 +32,9 @@ def goal_distance(goal_a, goal_b):
 
 class PickAndPlaceEnv(MujocoEnv):
     metadata = {"render_modes": [
-        "human", "rgb_array", "depth_array"], "render_fps": 25}
+        "human", "rgb_array", "depth_array"], "render_fps": 20}
 
-    def __init__(self, model_path: str = "./assets/pick_and_place.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint'] = 'mocap', gripper_extra_height=0, target_in_the_air=True, distance_threshold=0.01, height_offset: float = 0.81, reward_type="sparse", frame_skip: int = 20, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, reward_weight: int = 10, **kwargs) -> None:
+    def __init__(self, model_path: str = "./assets/pick_and_place.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint'] = 'mocap', gripper_extra_height=0, target_in_the_air=True, distance_threshold=0.01, height_offset: float = 0.81, reward_type="sparse", frame_skip: int = 25, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, reward_weight: int = 10, **kwargs) -> None:
 
         self.gripper_extra_height = gripper_extra_height
         self.block_gripper = block_gripper
@@ -421,3 +421,34 @@ class PickAndPlaceEnv(MujocoEnv):
     def compute_truncated(self, achievec_goal, desired_goal, info):
         """The environments will be truncated only if setting a time limit with max_steps which will automatically wrap the environment in a gymnasium TimeLimit wrapper."""
         return False
+
+    def stage_rewards(self):
+        """
+        Returns staged rewards based on current physical states.
+        Stages consist of reaching, grasping, lifting, and hovering.
+
+        Returns:
+            4-tuple:
+
+                - (float) reaching reward
+                - (float) grasping reward
+                - (float) lifting reward
+                - (float) hovering reward
+        """
+
+        reach_mult = 0.1
+        grasp_mult = 0.35
+        lift_mult = 0.5
+        hover_mult = 0.7
+
+        grip_pos = mujoco_utils.get_site_xpos(
+            self.model, self.data, "EEF")
+        object_pos = mujoco_utils.get_site_xpos(
+            self.model, self.data, "object0")
+        target_pos = mujoco_utils.get_site_xpos(
+            self.model, self.data, "target0")
+
+        r_reach = (
+            1 - np.tanh(10 * goal_distance(grip_pos, object_pos))) * reach_mult
+
+        return
