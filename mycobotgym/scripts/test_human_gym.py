@@ -20,7 +20,7 @@ def print_contacts(model, data):
 # env = gym.make("FetchPickAndPlace-v2", render_mode="human")
 # env = gym.make("FrankaKitchen-v1", render_mode="human", ik_controller=False)
 env = gym.make("ReachObjectEnv-Dense-v0", render_mode="human",
-               controller_type="joint", has_object=False)
+               controller_type="joint", has_object=True)
 observation = env.reset(seed=42)
 for i in range(10000):
     # env.render()
@@ -34,7 +34,7 @@ for i in range(10000):
 
     # action *= 2
     # observation, reward, terminated, truncated, info = env.step(action)
-    if i % 1000 == 0:
+    if i % 100 == 0:
         env.reset()
 
 # action = env.action_space.sample()  # User-defined policy function

@@ -20,7 +20,8 @@ DEFAULT_CAMERA_CONFIG = {
 
 MAX_CARTESIAN_DISPLACEMENT = 0.05
 MAX_ROTATION_DISPLACEMENT = 0.5
-OBJECT_RANGE = [0.12, 0.21]
+X_OBJECT_RANGE = [-0.2, 0.2]
+Y_OBJECT_RANGE = [-0.1, 0.05]
 TARGET_HEIGHT_RANGE = [0, 0.25]
 
 
@@ -255,18 +256,14 @@ class PickAndPlaceEnv(MujocoEnv):
         return obs
 
     def _sample_object(self):
-        object_x = self.np_random.choice(
-            [self.np_random.uniform(-OBJECT_RANGE[1], -OBJECT_RANGE[0]), self.np_random.uniform(OBJECT_RANGE[0], OBJECT_RANGE[1])])
-        object_y = self.np_random.choice(
-            [self.np_random.uniform(-OBJECT_RANGE[1], -OBJECT_RANGE[0]), self.np_random.uniform(OBJECT_RANGE[0], OBJECT_RANGE[1])])
+        object_x = self.np_random.uniform(X_OBJECT_RANGE[0], X_OBJECT_RANGE[1])
+        object_y = self.np_random.uniform(Y_OBJECT_RANGE[0], Y_OBJECT_RANGE[1])
         object_xpos = [object_x, object_y]
         return object_xpos.copy()
 
     def _sample_goal(self):
-        goal_x = self.np_random.choice(
-            [self.np_random.uniform(-OBJECT_RANGE[1], -OBJECT_RANGE[0]), self.np_random.uniform(OBJECT_RANGE[0], OBJECT_RANGE[1])])
-        goal_y = self.np_random.choice(
-            [self.np_random.uniform(-OBJECT_RANGE[1], -OBJECT_RANGE[0]), self.np_random.uniform(OBJECT_RANGE[0], OBJECT_RANGE[1])])
+        goal_x = self.np_random.uniform(X_OBJECT_RANGE[0], X_OBJECT_RANGE[1])
+        goal_y = self.np_random.uniform(Y_OBJECT_RANGE[0], Y_OBJECT_RANGE[1])
         goal_z = self.height_offset
         if self.target_in_the_air and self.np_random.uniform() < 0.5:
             goal_z += self.np_random.uniform(*TARGET_HEIGHT_RANGE)
