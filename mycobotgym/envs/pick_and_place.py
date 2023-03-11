@@ -20,8 +20,8 @@ DEFAULT_CAMERA_CONFIG = {
 
 MAX_CARTESIAN_DISPLACEMENT = 0.05
 MAX_ROTATION_DISPLACEMENT = 0.5
-X_OBJECT_RANGE = [-0.15, 0.15]
-Y_OBJECT_RANGE = [-0.1, 0.05]
+X_OBJECT_RANGE = [-0.1, 0.1]
+Y_OBJECT_RANGE = [-0.15, -0.05]
 TARGET_HEIGHT_RANGE = [0, 0.25]
 
 
@@ -432,7 +432,7 @@ class PickAndPlaceEnv(MujocoEnv):
 
         reach_mult = 0.1
         grasp_mult = 0.35
-        lift_mult = 0.5
+        lift_mult = 0.7
 
         grip_pos = mujoco_utils.get_site_xpos(
             self.model, self.data, "EEF")
