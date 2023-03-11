@@ -34,7 +34,7 @@ class PickAndPlaceEnv(MujocoEnv):
     metadata = {"render_modes": [
         "human", "rgb_array", "depth_array"], "render_fps": 20}
 
-    def __init__(self, model_path: str = "./assets/pick_and_place.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint'] = 'mocap', gripper_extra_height=0, target_in_the_air=True, distance_threshold=0.01, height_offset: float = 0.81, reward_type="sparse", frame_skip: int = 25, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, reward_weight: int = 10, **kwargs) -> None:
+    def __init__(self, model_path: str = "./assets/pick_and_place.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint'] = 'mocap', gripper_extra_height=0, target_in_the_air=True, distance_threshold=0.01, height_offset: float = 0.81, reward_type="sparse", frame_skip: int = 25, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
 
         self.gripper_extra_height = gripper_extra_height
         self.block_gripper = block_gripper
@@ -44,7 +44,6 @@ class PickAndPlaceEnv(MujocoEnv):
         self.reward_type = reward_type
         self.control_steps = control_steps
         self.controller_type = controller_type
-        self.reward_weight = reward_weight
         self.height_offset = height_offset
         self.goal = np.zeros(0)
 
@@ -199,9 +198,7 @@ class PickAndPlaceEnv(MujocoEnv):
         obs = self._get_obs()
 
         info = {
-            "is_success": self._is_success(obs["observation"][:3], obs["achieved_goal"], self.goal),
-            "grip_pos": obs["observation"][:3]
-        }
+            "is_success": self._is_success(obs["observation"][:3], obs["achieved_goal"], self.goal)}
         reward = self.compute_reward(obs["achieved_goal"], self.goal, info)
         terminated = self.compute_terminated(
             obs["achieved_goal"], obs["desired_goal"], info)
@@ -318,23 +315,15 @@ class PickAndPlaceEnv(MujocoEnv):
     def compute_reward(self, achieved_goal, goal, info):
         # Compute distance between goal and the achieved goal.
         d = goal_distance(achieved_goal, goal)
-        if self.has_object:
-            # Compute distance between gripper and the achieved goal (object).
-            if isinstance(info, np.ndarray):
-                grip_pos = np.array([item['grip_pos'] for item in info])
-            else:
-                grip_pos = info["grip_pos"]
-            r = goal_distance(grip_pos, achieved_goal)
-            if self.reward_type == "sparse":
-                return -(d > self.distance_threshold).astype(np.float32)
-            elif self.reward_type == "dense":
-                return (-d) + (-self.reward_weight * r)
-
-        else:
-            if self.reward_type == "sparse":
-                return -(d > self.distance_threshold).astype(np.float32)
-            elif self.reward_type == "dense":
-                return -d
+        if self.reward_type == "sparse":
+            return -(d > self.distance_threshold).astype(np.float32)
+        elif self.reward_type == "dense":
+            return -d
+        elif self.reward_type == "reward_shaping":
+            grip_pos = mujoco_utils.get_site_xpos(self.model, self.data, "EEF")
+            reward = int(self._is_success(grip_pos, achieved_goal, goal))
+            reward += max(self.stage_rewards())
+            return reward
 
     def _step_callback(self):
         if self.block_gripper:
@@ -422,10 +411,16 @@ class PickAndPlaceEnv(MujocoEnv):
         """The environments will be truncated only if setting a time limit with max_steps which will automatically wrap the environment in a gymnasium TimeLimit wrapper."""
         return False
 
+    def _check_contact(self, gripper_id, object_id):
+        for contact in self.data.contact:
+            if (gripper_id == contact.geom1 and object_id == contact.geom2) or (object_id == contact.geom1 and gripper_id == contact.geom2):
+                return True
+        return False
+
     def stage_rewards(self):
         """
         Returns staged rewards based on current physical states.
-        Stages consist of reaching, grasping, lifting, and hovering.
+        Stages consist of reaching, grasping, lifting.
 
         Returns:
             4-tuple:
@@ -433,13 +428,11 @@ class PickAndPlaceEnv(MujocoEnv):
                 - (float) reaching reward
                 - (float) grasping reward
                 - (float) lifting reward
-                - (float) hovering reward
         """
 
         reach_mult = 0.1
         grasp_mult = 0.35
         lift_mult = 0.5
-        hover_mult = 0.7
 
         grip_pos = mujoco_utils.get_site_xpos(
             self.model, self.data, "EEF")
@@ -448,7 +441,23 @@ class PickAndPlaceEnv(MujocoEnv):
         target_pos = mujoco_utils.get_site_xpos(
             self.model, self.data, "target0")
 
+        r_reach = 0.0
         r_reach = (
             1 - np.tanh(10 * goal_distance(grip_pos, object_pos))) * reach_mult
 
-        return
+        right_finger_layer = mujoco.mj_name2id(
+            self.model, mujoco.mjtObj.mjOBJ_GEOM, "right_finger_layer")
+        left_finger_layer = mujoco.mj_name2id(
+            self.model, mujoco.mjtObj.mjOBJ_GEOM, "left_finger_layer")
+        object_id = mujoco.mj_name2id(
+            self.model, mujoco.mjtObj.mjOBJ_GEOM, "object0")
+        r_grasp = (int(self._check_contact(right_finger_layer, object_id)
+                   or self._check_contact(left_finger_layer, object_id)) * grasp_mult)
+
+        r_lift = 0.0
+        if self._check_contact(right_finger_layer, object_id) and self._check_contact(left_finger_layer, object_id):
+            r_lift = grasp_mult + \
+                (1 - np.tanh(15.0 * goal_distance(target_pos, object_pos))) * \
+                (lift_mult - grasp_mult)
+
+        return r_reach, r_grasp, r_lift

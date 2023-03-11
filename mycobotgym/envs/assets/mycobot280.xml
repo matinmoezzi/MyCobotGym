@@ -109,7 +109,8 @@
                         <geom type="mesh" rgba="0.792157 0.819608 0.933333 1"
                           mesh="right_finger_link" />
                         <body name="right_finger_layer">
-                          <geom type="box" size="0.013 0.01 0.001" pos="0.041 0.005 -0.021"
+                          <geom name="right_finger_layer" type="box" size="0.013 0.01 0.001"
+                            pos="0.041 0.005 -0.021"
                             condim="4" friction="2 0.3 0.1"
                             solref="-20000 -500"
                             solimp="0.999 0.999 0.001"></geom>
@@ -134,7 +135,8 @@
                         <geom type="mesh" rgba="0.792157 0.819608 0.933333 1"
                           mesh="left_finger_link" />
                         <body name="left_finger_layer">
-                          <geom type="box" size="0.013 0.01 0.001" pos="0.041 0.005 0.021"
+                          <geom name="left_finger_layer" type="box" size="0.013 0.01 0.001"
+                            pos="0.041 0.005 0.021"
                             condim="4" friction="2 0.3 0.1" solref="-20000 -500"
                             solimp="0.999 0.999 0.001"></geom>
                         </body>
