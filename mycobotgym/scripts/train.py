@@ -41,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--log-interval", type=int,
                         default=1, help="Number episodes before logging")
     parser.add_argument("--eval-freq", type=int,
-                        default=1000, help="Number episodes before logging")
+                        default=1000, help="Number of timesteps before evalution")
     parser.add_argument("-n", "--num-env", type=int, default=num_cpu,
                         help="Number of parallel environment instances")
     parser.add_argument("-o", "--model-output-dir", type=str,
