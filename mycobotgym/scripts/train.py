@@ -3,6 +3,7 @@ import gymnasium
 import sys
 sys.modules["gym"] = gymnasium
 from stable_baselines3 import SAC, HerReplayBuffer, TD3, PPO, DDPG, A2C
+from stable_baselines3.common.callbacks import EvalCallback
 import mycobotgym.envs
 import argparse
 import multiprocessing
@@ -39,6 +40,8 @@ if __name__ == "__main__":
                         default=1000, help="Total timesteps for training per env")
     parser.add_argument("-i", "--log-interval", type=int,
                         default=1, help="Number episodes before logging")
+    parser.add_argument("--eval-freq", type=int,
+                        default=1000, help="Number episodes before logging")
     parser.add_argument("-n", "--num-env", type=int, default=num_cpu,
                         help="Number of parallel environment instances")
     parser.add_argument("-o", "--model-output-dir", type=str,
@@ -74,6 +77,8 @@ if __name__ == "__main__":
     env = vec_env_cls([make_env(args.env, i, args.controller_type)
                        for i in range(args.num_env)])
 
+    eval_callback = EvalCallback(env, best_model_save_path=args.model_output_dir + out_name,
+                                 eval_freq=max(args.eval_freq // args.num_env, 1), deterministic=True, render=False)
     if args.her:
         assert args.algo in ["DDPG", "TD3",
                              "SAC"], "HER only works with DDPG, TD3, SAC"
@@ -92,8 +97,6 @@ if __name__ == "__main__":
                 "MultiInputPolicy", env, tensorboard_log=args.tensorboard_dir + out_name, verbose=args.verbose, train_freq=(1, "step"))
 
     model.learn(args.total_timesteps * args.num_env, progress_bar=True,
-                log_interval=args.log_interval)
-
-    model.save(args.model_output_dir + out_name)
+                log_interval=args.log_interval, callback=eval_callback)
 
     env.close()
