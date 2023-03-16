@@ -40,6 +40,8 @@ if __name__ == "__main__":
                         default=1000, help="Total timesteps for training per env")
     parser.add_argument("-i", "--log-interval", type=int,
                         default=1, help="Number episodes before logging")
+    parser.add_argument("--device", type=str,
+                        default="auto", help="Training Device")
     parser.add_argument("--eval-freq", type=int,
                         default=1000, help="Number of timesteps before evalution")
     parser.add_argument("-n", "--num-env", type=int, default=num_cpu,
@@ -87,14 +89,14 @@ if __name__ == "__main__":
         replay_buffer_dict = dict(
             n_sampled_goal=4, goal_selection_strategy="future", online_sampling=True)
         model = algos[args.algo]("MultiInputPolicy", env, replay_buffer_class=replay_buffer_cls,
-                                 replay_buffer_kwargs=replay_buffer_dict, gradient_steps=-1, tensorboard_log=args.tensorboard_dir + out_name, verbose=args.verbose)
+                                 replay_buffer_kwargs=replay_buffer_dict, gradient_steps=-1, tensorboard_log=args.tensorboard_dir + out_name, verbose=args.verbose, device=args.device)
     else:
         if args.algo in ["PPO", "A2C"]:
             model = algos[args.algo](
-                "MultiInputPolicy", env, n_steps=args.total_timesteps, tensorboard_log=args.tensorboard_dir + out_name, verbose=args.verbose)
+                "MultiInputPolicy", env, n_steps=args.total_timesteps, tensorboard_log=args.tensorboard_dir + out_name, verbose=args.verbose, device=args.device)
         else:
             model = algos[args.algo](
-                "MultiInputPolicy", env, tensorboard_log=args.tensorboard_dir + out_name, verbose=args.verbose, train_freq=(1, "step"))
+                "MultiInputPolicy", env, tensorboard_log=args.tensorboard_dir + out_name, verbose=args.verbose, train_freq=(1, "step"), device=args.device)
 
     model.learn(args.total_timesteps * args.num_env, progress_bar=True,
                 log_interval=args.log_interval, callback=eval_callback)
