@@ -1,7 +1,6 @@
 from stable_baselines3 import SAC, TD3, PPO, DDPG, A2C
 import gymnasium
 import numpy as np
-from stable_baselines3.common.evaluation import evaluate_policy
 import mycobotgym.envs
 import sys
 sys.modules["gym"] = gymnasium
@@ -94,6 +93,7 @@ def evaluate_policy(
 
     current_rewards = np.zeros(n_envs)
     current_lengths = np.zeros(n_envs, dtype="int")
+    # env.seed(np.random.randint(0, 10))
     observations = env.reset()
     states = None
     episode_starts = np.ones((env.num_envs,), dtype=bool)
@@ -169,7 +169,7 @@ if __name__ == "__main__":
 
     # Evaluate trained model
     mean_reward, std_reward, success_rate = evaluate_policy(
-        model, model.get_env(), n_eval_episodes=1)
+        model, model.get_env(), n_eval_episodes=10)
     print(f"Mean Reward: {mean_reward}")
     print(f"Std Reward: {std_reward}")
     print(f"Success Rate: {success_rate}")
