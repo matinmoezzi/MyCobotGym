@@ -164,8 +164,8 @@ if __name__ == "__main__":
     env = gymnasium.make(env_id, render_mode="human",
                          controller_type=controller_type)
 
-    model = ALGOS[algorithm].load(sys.argv[1], env)
-    # model = ALGOS[algorithm].load(sys.argv[1] + "/best_model.zip", env)
+    # model = ALGOS[algorithm].load(sys.argv[1], env)
+    model = ALGOS[algorithm].load(sys.argv[1] + "/best_model.zip", env)
 
     # Evaluate trained model
     mean_reward, std_reward, success_rate = evaluate_policy(
