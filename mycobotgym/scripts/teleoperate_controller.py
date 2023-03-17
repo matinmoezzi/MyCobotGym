@@ -12,6 +12,11 @@ from gymnasium_robotics.utils import rotations
 import numpy as np
 
 
+def goal_distance(goal_a, goal_b):
+    assert goal_a.shape == goal_b.shape
+    return np.linalg.norm(goal_a - goal_b, axis=-1)
+
+
 class Direction(Enum):
     POS: int = 1
     NEG: int = -1
@@ -316,6 +321,17 @@ class RobotControlViewer(WindowViewer):
                          "Rotate x axis", "[N]/[M]")
         self.add_overlay(mujoco.mjtGridPos.mjGRID_TOPRIGHT,
                          "Slow down/Speed up", "[-]/[=]")
+
+        goal = mujoco_utils.get_site_xpos(self.model, self.data, "target0")
+        obj = mujoco_utils.get_site_xpos(self.model, self.data, "object0")
+        eef = mujoco_utils.get_site_xpos(self.model, self.data, "EEF")
+
+        self.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "distance_object_target", "%.3f" %
+                         goal_distance(obj, goal))
+        self.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "distance_gripper_object", "%.3f" %
+                         goal_distance(eef, obj))
+        self.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "distance_gripper_target", "%.3f" %
+                         goal_distance(eef, goal))
 
 
 def main():
