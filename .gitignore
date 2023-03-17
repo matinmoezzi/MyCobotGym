@@ -131,7 +131,7 @@ dmypy.json
 # vscode
 .vscode
 
-tensorboard-log
+# tensorboard-log
 # trained_model
 log-dir
 .DS_Store
