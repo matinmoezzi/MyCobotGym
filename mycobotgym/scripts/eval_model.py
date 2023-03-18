@@ -157,17 +157,22 @@ if __name__ == "__main__":
     path = sys.argv[1]
     agent = path.rsplit("/", 1)[-1]
     agent_spec = agent.split("-")
-    env_id = "-".join(agent_spec[:3])
-    algorithm = agent_spec[4]
+    env_id = "-".join(agent_spec[:3]) if agent_spec in ["Dense",
+                                                        "Sparse"] else "-".join(agent_spec[:2])
+    algorithm = agent_spec[4] if agent_spec in [
+        "Dense", "Sparse"] else agent_spec[3]
     controller_type = agent_spec[6] if len(agent_spec) > 10 else agent_spec[5]
-    env = gymnasium.make(env_id,
-                         controller_type=controller_type)
+    if controller_type != 'None':
+        env = gymnasium.make(env_id,
+                             controller_type=controller_type)
+    else:
+        env = gymnasium.make(env_id, render_mode="human")
 
     model = ALGOS[algorithm].load(sys.argv[1] + "/best_model.zip", env)
 
     # Evaluate trained model
     mean_reward, std_reward, success_rate = evaluate_policy(
-        model, model.get_env(), n_eval_episodes=100)
+        model, model.get_env(), n_eval_episodes=10)
     print(f"Mean Reward: {mean_reward}")
     print(f"Std Reward: {std_reward}")
     print(f"Success Rate: {success_rate}")
