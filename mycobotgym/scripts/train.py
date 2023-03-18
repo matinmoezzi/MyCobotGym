@@ -68,7 +68,7 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--multiproc", action="store_true",
                         help="Enable multiprocessor training")
     parser.add_argument("-e", "--env", type=str, default="ReachObjectEnv-Dense-v0", choices=[
-                        "ReachObjectEnv-Dense-v0", "ReachObjectEnv-Sparse-v0", "PickAndPlaceEnv-Dense-v0", "PickAndPlaceEnv-Sparse-v0", "FetchPickAndPlace-v2", "FetchReach-v2"], help="Environment")
+                        "ReachObjectEnv-Dense-v0", "ReachObjectEnv-Sparse-v0", "PickAndPlaceEnv-Dense-v0", "PickAndPlaceEnv-Sparse-v0", "FetchPickAndPlace-v2", "FetchReach-v3"], help="Environment")
     parser.add_argument("-v", "--verbose", type=int, default=2,
                         help="Verbosity level: 0 for no output, 1 for info messages (such as device or wrappers used), 2 for debug messages")
     args = parser.parse_args()
