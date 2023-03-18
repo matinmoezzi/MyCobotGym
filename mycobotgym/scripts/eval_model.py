@@ -93,7 +93,6 @@ def evaluate_policy(
 
     current_rewards = np.zeros(n_envs)
     current_lengths = np.zeros(n_envs, dtype="int")
-    # env.seed(np.random.randint(0, 10))
     observations = env.reset()
     states = None
     episode_starts = np.ones((env.num_envs,), dtype=bool)
@@ -161,15 +160,14 @@ if __name__ == "__main__":
     env_id = "-".join(agent_spec[:3])
     algorithm = agent_spec[4]
     controller_type = agent_spec[6] if len(agent_spec) > 10 else agent_spec[5]
-    env = gymnasium.make(env_id, render_mode="human",
+    env = gymnasium.make(env_id,
                          controller_type=controller_type)
 
-    # model = ALGOS[algorithm].load(sys.argv[1], env)
     model = ALGOS[algorithm].load(sys.argv[1] + "/best_model.zip", env)
 
     # Evaluate trained model
     mean_reward, std_reward, success_rate = evaluate_policy(
-        model, model.get_env(), n_eval_episodes=10)
+        model, model.get_env(), n_eval_episodes=100)
     print(f"Mean Reward: {mean_reward}")
     print(f"Std Reward: {std_reward}")
     print(f"Success Rate: {success_rate}")
