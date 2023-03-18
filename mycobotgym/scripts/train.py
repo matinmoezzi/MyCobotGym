@@ -10,9 +10,10 @@ import multiprocessing
 from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.utils import set_random_seed
+import gymnasium_robotics.envs
 
 
-def make_env(env_id, rank, controller_type, seed=0):
+def make_env(env_id, rank, controller_type=None, seed=0):
     """
     Utility function for multiprocessed env.
 
@@ -22,8 +23,12 @@ def make_env(env_id, rank, controller_type, seed=0):
     :param rank: (int) index of the subprocess
     """
     def _init():
-        env = Monitor(gymnasium.make(
-            env_id, controller_type=controller_type, render_mode=render_mode))
+        if controller_type:
+            env = Monitor(gymnasium.make(
+                env_id, controller_type=controller_type, render_mode=render_mode))
+        else:
+            env = Monitor(gymnasium.make(
+                env_id, render_mode=render_mode))
         env.reset(seed=seed + rank)
         return env
     set_random_seed(seed)
@@ -57,13 +62,13 @@ if __name__ == "__main__":
     parser.add_argument("--algo", type=str, default="SAC",
                         choices=["SAC", "DDPG", "TD3", "PPO", "A2C"], help="Training algorithm [PPO, SAC, TD3, DDPG]")
     parser.add_argument("-c", "--controller-type", type=str,
-                        default="joint", choices=["joint", "mocap", "IK"], help="Controller type 1)Inverse Kinematics (IK) 2) Mocap 3) Joint position control")
+                        choices=["joint", "mocap", "IK"], help="Controller type 1)Inverse Kinematics (IK) 2) Mocap 3) Joint position control")
     parser.add_argument("--human", action="store_true",
                         help="Enable human render mode")
     parser.add_argument("-m", "--multiproc", action="store_true",
                         help="Enable multiprocessor training")
     parser.add_argument("-e", "--env", type=str, default="ReachObjectEnv-Dense-v0", choices=[
-                        "ReachObjectEnv-Dense-v0", "ReachObjectEnv-Sparse-v0", "PickAndPlaceEnv-Dense-v0", "PickAndPlaceEnv-Sparse-v0"], help="Environment")
+                        "ReachObjectEnv-Dense-v0", "ReachObjectEnv-Sparse-v0", "PickAndPlaceEnv-Dense-v0", "PickAndPlaceEnv-Sparse-v0", "FetchPickAndPlace-v2", "FetchReach-v2"], help="Environment")
     parser.add_argument("-v", "--verbose", type=int, default=2,
                         help="Verbosity level: 0 for no output, 1 for info messages (such as device or wrappers used), 2 for debug messages")
     args = parser.parse_args()
