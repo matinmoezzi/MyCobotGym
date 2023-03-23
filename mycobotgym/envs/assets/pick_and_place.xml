@@ -34,7 +34,7 @@
 
     </worldbody>
     <actuator>
-        <general class="mycobot" name="actuator1" joint="robot0:joint1" gainprm="4500"
+        <!-- <general class="mycobot" name="actuator1" joint="robot0:joint1" gainprm="4500"
             biasprm="0 -4500 -450" />
         <general class="mycobot" name="actuator2" joint="robot0:joint2" gainprm="4500"
             biasprm="0 -4500 -450"
@@ -49,7 +49,7 @@
             forcerange="-12 12" />
         <general class="mycobot" name="actuator6" joint="robot0:joint6" gainprm="2000"
             biasprm="0 -2000 -200"
-            forcerange="-12 12" />
+            forcerange="-12 12" /> -->
 
         <general biastype="affine" name="fingers_actuator" tendon="split" forcerange="-5 5"
             ctrlrange="0 255" gainprm="0.27 0 0" biasprm="0 -100 -10" forcelimited="true"
