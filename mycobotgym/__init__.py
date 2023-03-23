@@ -3,7 +3,7 @@ import gymnasium
 
 REWARD = {"dense": "Dense", "sparse": "Sparse",
           "reward_shaping": "RewardShaping"}
-for reward_type, has_object, controller in itertools.product(["dense", "sparse", "reward_shaping"], [True, False], ["mocap", "IK", "joint"]):
+for reward_type, has_object, controller in itertools.product(["dense", "sparse", "reward_shaping"], [True, False], ["mocap", "IK", "joint", "delta_joint"]):
     kwargs = {
         "reward_type": reward_type,
         "has_object": has_object,

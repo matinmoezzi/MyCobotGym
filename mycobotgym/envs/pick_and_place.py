@@ -20,6 +20,7 @@ DEFAULT_CAMERA_CONFIG = {
 
 MAX_CARTESIAN_DISPLACEMENT = 0.2
 MAX_ROTATION_DISPLACEMENT = 0.5
+MAX_JOINT_DISPLACEMENT = 0.5
 X_OBJECT_RANGE = [-0.1, 0.1]
 Y_OBJECT_RANGE = [-0.15, -0.05]
 TARGET_HEIGHT_RANGE = [0, 0.25]
@@ -34,7 +35,7 @@ class MyCobotPickAndPlace(MujocoEnv):
     metadata = {"render_modes": [
         "human", "rgb_array", "depth_array"], "render_fps": 10}
 
-    def __init__(self, model_path: str = "./assets/pick_and_place.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint'] = 'IK', target_in_the_air=True, distance_threshold=0.02, reward_type="sparse", frame_skip: int = 50, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
+    def __init__(self, model_path: str = "./assets/pick_and_place.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint', 'delta_joint'] = 'IK', target_in_the_air=True, distance_threshold=0.02, reward_type="sparse", frame_skip: int = 50, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
 
         self.block_gripper = block_gripper
         self.has_object = has_object
@@ -100,7 +101,7 @@ class MyCobotPickAndPlace(MujocoEnv):
         if self.controller_type == 'IK':
             self.controller = IKController(self.model, self.data)
             action_size = 7  # 3 translation + 3 rotation (euler) + 1 gripper
-        elif self.controller_type == 'joint':
+        elif self.controller_type in ['joint', 'delta_joint']:
             self.controller = None
             action_size = 7  # 6 joint positions + 1 gripper
         elif self.controller_type == 'mocap':
@@ -193,6 +194,14 @@ class MyCobotPickAndPlace(MujocoEnv):
             action = self.actuation_center + \
                 action * self.actuation_range
             self.do_simulation(action, self.frame_skip)
+        elif self.controller_type == 'delta_joint':
+            mujoco.mj_forward(self.model, self.data)
+            self.data.ctrl[-1] = (
+                self.actuation_center[-1] +
+                action[-1] * self.actuation_range[-1]
+            )
+            self.data.ctrl[:-1] += action[:-1] * MAX_JOINT_DISPLACEMENT
+            mujoco.mj_step(self.model, self.data, nstep=self.frame_skip)
 
         self._step_callback()
 

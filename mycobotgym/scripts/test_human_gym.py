@@ -19,8 +19,7 @@ def print_contacts(model, data):
 
 # env = gym.make("FetchPickAndPlace-v2", render_mode="human")
 # env = gym.make("FrankaKitchen-v1", render_mode="human", ik_controller=False)
-env = gym.make("ReachObjectEnv-Sparse-IK-v0", render_mode="human",
-               controller_type="IK", has_object=True)
+env = gym.make("ReachObjectEnv-Sparse-delta_joint-v0", render_mode="human")
 # env = gym.make("PickAndPlace-v1", render_mode="human")
 observation = env.reset(seed=42)
 # action = env.action_space.sample()  # User-defined policy function
