@@ -71,7 +71,7 @@ class MyCobotPickAndPlace(MujocoEnv):
         else:
             # Hide mocap geoms.
             mocap_id = mujoco.mj_name2id(
-                self.model, mujoco.mjtObj.mjOBJ_BODY, "mocap")
+                self.model, mujoco.mjtObj.mjOBJ_BODY, "robot0:mocap")
             mocap_geom_start_id = self.model.body_geomadr[mocap_id]
             mocap_geom_end_id = (
                 mocap_geom_start_id + self.model.body_geomnum[mocap_id]
