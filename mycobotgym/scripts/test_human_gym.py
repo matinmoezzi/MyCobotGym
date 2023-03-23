@@ -19,15 +19,15 @@ def print_contacts(model, data):
 
 # env = gym.make("FetchPickAndPlace-v2", render_mode="human")
 # env = gym.make("FrankaKitchen-v1", render_mode="human", ik_controller=False)
-# env = gym.make("ReachObjectEnv-Dense-v0", render_mode="human",
-#                controller_type="IK", has_object=True)
-env = gym.make("PickAndPlace-v1", render_mode="human")
+env = gym.make("ReachObjectEnv-Dense-IK-v0", render_mode="human",
+               controller_type="IK", has_object=True)
+# env = gym.make("PickAndPlace-v1", render_mode="human")
 observation = env.reset(seed=42)
+# action = env.action_space.sample()  # User-defined policy function
 for i in range(10000):
-    env.render()
     # env.render()
-    # action = env.action_space.sample()  # User-defined policy function
-    # observation, reward, terminated, truncated, info = env.step(action)
+    action = env.action_space.sample()  # User-defined policy function
+    observation, reward, terminated, truncated, info = env.step(action)
     # env.data.ctrl = np.array(action)
     # mujoco.mj_step(env.model, env.data, 20)
     # env.render()

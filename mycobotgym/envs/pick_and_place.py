@@ -30,13 +30,12 @@ def goal_distance(goal_a, goal_b):
     return np.linalg.norm(goal_a - goal_b, axis=-1)
 
 
-class PickAndPlaceEnv(MujocoEnv):
+class MyCobotPickAndPlace(MujocoEnv):
     metadata = {"render_modes": [
         "human", "rgb_array", "depth_array"], "render_fps": 10}
 
-    def __init__(self, model_path: str = "./assets/pick_and_place.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint'] = 'IK', gripper_extra_height=0, target_in_the_air=True, distance_threshold=0.02, reward_type="sparse", frame_skip: int = 50, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
+    def __init__(self, model_path: str = "./assets/pick_and_place.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint'] = 'IK', target_in_the_air=True, distance_threshold=0.02, reward_type="sparse", frame_skip: int = 50, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
 
-        self.gripper_extra_height = gripper_extra_height
         self.block_gripper = block_gripper
         self.has_object = has_object
         self.target_in_the_air = target_in_the_air
@@ -200,7 +199,7 @@ class PickAndPlaceEnv(MujocoEnv):
         obs = self._get_obs()
 
         info = {
-            "is_success": self._is_success(obs["observation"][:3], obs["achieved_goal"], self.goal)}
+            "is_success": self._is_success(obs["achieved_goal"], self.goal)}
         reward = self.compute_reward(obs["achieved_goal"], self.goal, info)
         terminated = self.compute_terminated(
             obs["achieved_goal"], obs["desired_goal"], info)
@@ -306,13 +305,9 @@ class PickAndPlaceEnv(MujocoEnv):
             "desired_goal": self.goal.copy(),
         }
 
-    def _is_success(self, grip_pos, achieved_goal, desired_goal):
+    def _is_success(self, achieved_goal, desired_goal):
         d = goal_distance(achieved_goal, desired_goal)
-        if self.has_object:
-            r = goal_distance(grip_pos, achieved_goal)
-            return (d < self.distance_threshold or r < self.distance_threshold).astype(np.float32)
-        else:
-            return (d < self.distance_threshold).astype(np.float32)
+        return (d < self.distance_threshold).astype(np.float32)
 
     def compute_reward(self, achieved_goal, goal, info):
         # Compute distance between goal and the achieved goal.
