@@ -32,9 +32,9 @@ def goal_distance(goal_a, goal_b):
 
 class PickAndPlaceEnv(MujocoEnv):
     metadata = {"render_modes": [
-        "human", "rgb_array", "depth_array"], "render_fps": 20}
+        "human", "rgb_array", "depth_array"], "render_fps": 10}
 
-    def __init__(self, model_path: str = "./assets/pick_and_place.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint'] = 'mocap', gripper_extra_height=0, target_in_the_air=True, distance_threshold=0.015, height_offset: float = 0.81, reward_type="sparse", frame_skip: int = 25, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
+    def __init__(self, model_path: str = "./assets/pick_and_place.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint'] = 'IK', gripper_extra_height=0, target_in_the_air=True, distance_threshold=0.02, reward_type="sparse", frame_skip: int = 50, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
 
         self.gripper_extra_height = gripper_extra_height
         self.block_gripper = block_gripper
@@ -44,7 +44,6 @@ class PickAndPlaceEnv(MujocoEnv):
         self.reward_type = reward_type
         self.control_steps = control_steps
         self.controller_type = controller_type
-        self.height_offset = height_offset
         self.goal = np.zeros(0)
 
         xml_file_path = path.join(
@@ -87,6 +86,9 @@ class PickAndPlaceEnv(MujocoEnv):
 
         mujoco.mj_forward(self.model, self.data)
 
+        self.height_offset = mujoco_utils.get_site_xpos(
+            self.model, self.data, "object0"
+        )[2]
         if not self.has_object:
             object_id = mujoco.mj_name2id(
                 self.model, mujoco.mjtObj.mjOBJ_GEOM, 'object0')
