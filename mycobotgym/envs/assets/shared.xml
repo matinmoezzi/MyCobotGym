@@ -54,7 +54,7 @@
             solimp="0.95 0.99 0.001" solref="0.005 1" />
         <joint joint1="robot0:right_gear_joint" joint2="robot0:left_gear_joint" polycoef="0 1 0 0 0"
             solimp="0.95 0.99 0.001" solref="0.005 1" />
-        <weld name="mocap_weld" body1="robot0:mocap" body2="gripper_base" solimp="0.9 0.95 0.001"
+        <weld name="mocap_weld" body1="robot0:mocap" body2="gripper_tcp" solimp="0.9 0.95 0.001"
             solref="0.02 1"></weld>
     </equality>
 

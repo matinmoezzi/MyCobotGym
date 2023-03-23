@@ -58,7 +58,7 @@ class BaseFetchEnv(MujocoRobotEnv):
         self.distance_threshold = distance_threshold
         self.reward_type = reward_type
 
-        super().__init__(n_actions=8, **kwargs)
+        super().__init__(n_actions=4, **kwargs)
 
     # GoalEnv methods
     # ----------------------------
@@ -75,14 +75,19 @@ class BaseFetchEnv(MujocoRobotEnv):
     # ----------------------------
 
     def _set_action(self, action):
-        assert action.shape == (8,)
+        assert action.shape == (4,)
         action = (
             action.copy()
         )  # ensure that we don't change the action outside of this scope
-        pos_ctrl, rot_ctrl, gripper_ctrl = action[:3], action[3:7], action[-1]
+        pos_ctrl, gripper_ctrl = action[:3], action[3]
 
         pos_ctrl *= 0.05  # limit maximum change in position
-        rot_ctrl *= 0.02
+        rot_ctrl = [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        ]  # fixed rotation of the end effector, expressed as a quaternion
         gripper_ctrl = np.array([gripper_ctrl])
         assert gripper_ctrl.shape == (1,)
         if self.block_gripper:
@@ -172,7 +177,7 @@ class MujocoFetchEnv(BaseFetchEnv):
             self._mujoco.mj_forward(self.model, self.data)
 
     def _set_action(self, action):
-        super()._set_action(action)
+        action = super()._set_action(action)
 
         # Apply action to simulation.
         self._utils.ctrl_set_action(self.model, self.data, action)
@@ -273,6 +278,18 @@ class MujocoFetchEnv(BaseFetchEnv):
             self._utils.set_joint_qpos(self.model, self.data, name, value)
         self._utils.reset_mocap_welds(self.model, self.data)
         self._mujoco.mj_forward(self.model, self.data)
+
+        gripper_target = np.array(
+            [0, 0, 0]
+        ) + self._utils.get_site_xpos(self.model, self.data, "EEF")
+        gripper_rotation = np.array([0.0, 0.0, 1.0, 0.0])
+        self._utils.set_mocap_pos(
+            self.model, self.data, "robot0:mocap", gripper_target)
+        self._utils.set_mocap_quat(
+            self.model, self.data, "robot0:mocap", gripper_rotation
+        )
+        for _ in range(10):
+            self._mujoco.mj_step(self.model, self.data, nstep=self.n_substeps)
 
         # Extract information for sampling goals.
         self.initial_gripper_xpos = self._utils.get_site_xpos(
