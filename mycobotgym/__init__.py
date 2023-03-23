@@ -11,4 +11,4 @@ for reward_type, has_object, controller in itertools.product(["dense", "sparse",
     }
     name = "MyCobotPickAndPlace" if has_object else "MyCobotReach"
     gymnasium.register(f"{name}-{REWARD[reward_type]}-{controller}-v0",
-                       entry_point="mycobotgym.envs.pick_and_place:MyCobotPickAndPlace", kwargs=kwargs, max_episode_steps=100)
+                       entry_point="mycobotgym.envs.pick_and_place:MyCobotPickAndPlace", kwargs=kwargs, max_episode_steps=50)
