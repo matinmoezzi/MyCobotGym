@@ -58,13 +58,17 @@
       solimp="0.95 0.99 0.001" solref="0.005 1" />
     <joint joint1="robot0:right_gear_joint" joint2="robot0:left_gear_joint" polycoef="0 1 0 0 0"
       solimp="0.95 0.99 0.001" solref="0.005 1" />
+    <weld name="mocap_weld" body1="robot0:mocap" body2="gripper_tcp"
+      solimp="0.9 0.95
+        0.001"
+      solref="0.02 1"></weld>
   </equality>
 
   <default>
     <default class="mycobot">
-      <joint armature="0.1" damping="1"
+      <joint armature="1" damping="500" frictionloss="0" stiffness="0"
         range="-2.96706 2.96706"
-        limited="true" />
+        limited="true"></joint>
       <general dyntype="none" biastype="affine" ctrlrange="-2.96706 2.96706"
         forcerange="-87 87" forcelimited="true" ctrllimited="true" />
     </default>
@@ -102,6 +106,16 @@
         conaffinity="1" />
     </body>
 
+    <body mocap="true" name="robot0:mocap" pos="0.0138673  -0.13135342  1.27236">
+      <geom conaffinity="0" contype="0" pos="0 0 0" rgba="0 0.5 0 0.7" size="0.005 0.005 0.005"
+        type="box"></geom>
+      <geom conaffinity="0" contype="0" pos="0 0 0" rgba="0 0.5 0 0.1" size="1 0.005 0.005"
+        type="box"></geom>
+      <geom conaffinity="0" contype="0" pos="0 0 0" rgba="0 0.5 0 0.1" size="0.005 1 0.001"
+        type="box"></geom>
+      <geom conaffinity="0" contype="0" pos="0 0 0" rgba="0 0.5 0 0.1" size="0.005 0.005 1"
+        type="box"></geom>
+    </body>
     <!-- front view -->
     <camera name="frontview" pos="-1.175 -0.009 1.577"
       xyaxes="0.010 -1.000 -0.000 0.497 0.005 0.868" />
@@ -282,23 +296,6 @@
       qvel="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"></key>
   </keyframe>
   <actuator>
-    <general class="mycobot" name="actuator1" joint="robot0:joint1" gainprm="4500"
-      biasprm="0 -4500 -450" />
-    <general class="mycobot" name="actuator2" joint="robot0:joint2" gainprm="4500"
-      biasprm="0 -4500 -450"
-    />
-    <general class="mycobot" name="actuator3" joint="robot0:joint3" gainprm="3500"
-      biasprm="0 -3500 -350" />
-    <general class="mycobot" name="actuator4" joint="robot0:joint4" gainprm="2000"
-      biasprm="0 -2000 -200"
-      forcerange="-12 12" />
-    <general class="mycobot" name="actuator5" joint="robot0:joint5" gainprm="2000"
-      biasprm="0 -2000 -200"
-      forcerange="-12 12" />
-    <general class="mycobot" name="actuator6" joint="robot0:joint6" gainprm="2000"
-      biasprm="0 -2000 -200"
-      forcerange="-12 12" />
-
     <general biastype="affine" name="fingers_actuator" tendon="split" forcerange="-5 5"
       ctrlrange="0 255" gainprm="0.27 0 0" biasprm="0 -100 -10" forcelimited="true"
       ctrllimited="true" />

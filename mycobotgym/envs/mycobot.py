@@ -2,6 +2,7 @@ from typing import Literal
 import mujoco
 from os import path
 import numpy as np
+from mycobotgym.utils import *
 from gymnasium import spaces
 from gymnasium.envs.mujoco.mujoco_env import MujocoEnv
 from gymnasium_robotics.envs.franka_kitchen.ik_controller import IKController
@@ -21,21 +22,18 @@ DEFAULT_CAMERA_CONFIG = {
 MAX_CARTESIAN_DISPLACEMENT = 0.2
 MAX_ROTATION_DISPLACEMENT = 0.5
 MAX_JOINT_DISPLACEMENT = 0.5
-X_OBJECT_RANGE = [-0.1, 0.1]
-Y_OBJECT_RANGE = [-0.15, -0.05]
-TARGET_HEIGHT_RANGE = [0, 0.25]
 
 
-def goal_distance(goal_a, goal_b):
-    assert goal_a.shape == goal_b.shape
-    return np.linalg.norm(goal_a - goal_b, axis=-1)
+def limit_obj_loc(pos):
+    y_threshold = -0.15
+    pos[1] = max(pos[1], y_threshold)
 
 
-class MyCobotPickAndPlace(MujocoEnv):
+class MyCobotEnv(MujocoEnv):
     metadata = {"render_modes": [
         "human", "rgb_array", "depth_array"], "render_fps": 10}
 
-    def __init__(self, model_path: str = "./assets/pick_and_place.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint', 'delta_joint'] = 'IK', target_in_the_air=True, distance_threshold=0.02, reward_type="sparse", frame_skip: int = 50, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
+    def __init__(self, model_path: str = "./assets/mycobot280.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint', 'delta_joint'] = 'IK', obj_range: float = 0.1, target_range: float = 0.1, target_offset: float = 0.0, target_in_the_air=True, distance_threshold=0.02, initial_qpos: dict = {}, fetch_env: bool = False, reward_type="sparse", frame_skip: int = 50, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
 
         self.block_gripper = block_gripper
         self.has_object = has_object
@@ -44,7 +42,12 @@ class MyCobotPickAndPlace(MujocoEnv):
         self.reward_type = reward_type
         self.control_steps = control_steps
         self.controller_type = controller_type
-        self.goal = np.zeros(0)
+        self.initial_qpos = initial_qpos
+        self.fetch_env = fetch_env
+        self.target_range = target_range
+        self.target_offset = target_offset
+        self.obj_range = obj_range
+        self.goal = np.zeros(3)
 
         xml_file_path = path.join(
             path.dirname(path.realpath(__file__)),
@@ -62,54 +65,25 @@ class MyCobotPickAndPlace(MujocoEnv):
             default_camera_config=default_camera_config,
             ** kwargs,
         )
+        self.model_names = MujocoModelNames(self.model)
 
-        self.init_ctrl = np.array([0, 0, 0, 0, 0, 0, 0])
+        self._env_setup(self.initial_qpos)
 
-        if self.controller_type == "mocap":
-            mujoco_utils.reset_mocap_welds(self.model, self.data)
-            mujoco_utils.reset_mocap2body_xpos(self.model, self.data)
-        else:
-            # Hide mocap geoms.
-            mocap_id = mujoco.mj_name2id(
-                self.model, mujoco.mjtObj.mjOBJ_BODY, "robot0:mocap")
-            mocap_geom_start_id = self.model.body_geomadr[mocap_id]
-            mocap_geom_end_id = (
-                mocap_geom_start_id + self.model.body_geomnum[mocap_id]
-            )
-            for geom_id in range(mocap_geom_start_id, mocap_geom_end_id):
-                self.model.geom_rgba[geom_id, :] = 0.0
-            # Disable the mocap weld constraint
-            if self.model.nmocap > 0 and self.model.eq_data is not None:
-                for i in range(self.model.eq_data.shape[0]):
-                    if self.model.eq_type[i] == mujoco.mjtEq.mjEQ_WELD:
-                        self.model.eq_active[i] = 0
+        self.init_qpos = self.data.qpos.ravel().copy()
+        self.init_qvel = self.data.qvel.ravel().copy()
 
-        mujoco.mj_forward(self.model, self.data)
-
-        self.height_offset = mujoco_utils.get_site_xpos(
-            self.model, self.data, "object0"
-        )[2]
-        if not self.has_object:
-            object_id = mujoco.mj_name2id(
-                self.model, mujoco.mjtObj.mjOBJ_GEOM, 'object0')
-            site_id = mujoco.mj_name2id(
-                self.model, mujoco.mjtObj.mjOBJ_SITE, 'object0')
-            self.model.geom_size[object_id] = np.zeros(3)
-            self.model.site_size[site_id] = np.zeros(3)
-
-        mujoco.mj_forward(self.model, self.data)
+        self.controller = None
         if self.controller_type == 'IK':
             self.controller = IKController(self.model, self.data)
             action_size = 7  # 3 translation + 3 rotation (euler) + 1 gripper
         elif self.controller_type in ['joint', 'delta_joint']:
-            self.controller = None
             action_size = 7  # 6 joint positions + 1 gripper
         elif self.controller_type == 'mocap':
-            self.controller = None
-            # 3 end effector position + 4 end effector rotation (quat) + 1 gripper
-            action_size = 8
-
-        self.model_names = MujocoModelNames(self.model)
+            if self.fetch_env:
+                action_size = 4  # 3 mocap cartesian position + 1 gripper
+            else:
+                # 3 mocap position + 4 mocap rotation (quat) + 1 gripper
+                action_size = 8
 
         obs = self._get_obs()
         self.observation_space = spaces.Dict(
@@ -178,16 +152,20 @@ class MyCobotPickAndPlace(MujocoEnv):
                 mujoco.mj_step(self.model, self.data, nstep=self.frame_skip)
 
         elif self.controller_type == "mocap":
-            mocap_action = action[:-1].copy()
-            mocap_action[:3] *= MAX_CARTESIAN_DISPLACEMENT
-            mocap_action[3:7] *= MAX_ROTATION_DISPLACEMENT
-            mujoco_utils.mocap_set_action(self.model, self.data, mocap_action)
-            # Denormalize gripper action
-            gripper_action = (
+            mocap_action = np.zeros(8)
+            mocap_action[-1] = action[-1].copy()
+            mocap_action[:3] = action[:3] * 0.05
+            if self.fetch_env:
+                mocap_action[3:7] = np.array(
+                    [0.5, -0.5, -0.5, 0.5])
+            else:
+                mocap_action[3:7] = action[3:7]
+            self.data.mocap_pos[0] += action[:3] * 0.005
+            # mujoco_utils.mocap_set_action(self.model, self.data, mocap_action)
+            self.data.ctrl[-1] = (
                 self.actuation_center[-1] +
                 action[-1] * self.actuation_range[-1]
             )
-            self.data.ctrl[-1] = gripper_action
             mujoco.mj_step(self.model, self.data, nstep=self.frame_skip)
         elif self.controller_type == 'joint':
             # Denormalize the input action from [-1, 1] range to the each actuators control range
@@ -230,50 +208,50 @@ class MyCobotPickAndPlace(MujocoEnv):
         return obs, reward, terminated, truncated, info
 
     def reset_model(self):
-        qpos = self.init_qpos
-        qvel = self.init_qvel
-        self.data.ctrl[:] = self.init_ctrl
-        self.set_state(qpos, qvel)
+        self.data.qpos[:] = np.copy(self.init_qpos)
+        self.data.qvel[:] = np.copy(self.init_qvel)
+        if self.model.na != 0:
+            self.data.act[:] = None
+        mujoco.mj_forward(self.model, self.data)
 
-        # Randomize start position of object
+        if self.model.nmocap > 0 and self.fetch_env:
+            self._reset_mocap()
+
+        # Randomize object location
         if self.has_object:
-            object_xpos = self._sample_object()
+            object_xpos = self.initial_gripper_xpos[:2]
+            while np.linalg.norm(object_xpos - self.initial_gripper_xpos[:2]) < 0.1:
+                object_xpos = self.initial_gripper_xpos[:2] + self.np_random.uniform(
+                    -self.obj_range, self.obj_range, size=2
+                )
             object_qpos = mujoco_utils.get_joint_qpos(
                 self.model, self.data, "object0:joint"
             )
+            limit_obj_loc(object_xpos)
             assert object_qpos.shape == (7,)
             object_qpos[:2] = object_xpos
             mujoco_utils.set_joint_qpos(
                 self.model, self.data, "object0:joint", object_qpos
             )
 
-        if self.controller_type == "mocap":
-            mujoco_utils.reset_mocap2body_xpos(self.model, self.data)
-            mujoco_utils.reset_mocap_welds(self.model, self.data)
         mujoco.mj_forward(self.model, self.data)
-        self.goal = self._sample_goal().copy()
 
-        if self.has_object:
-            # Make sure that the target is far from object enough
-            while np.linalg.norm(np.array(self.goal) - np.array(object_qpos[:3])) < self.distance_threshold * 2:
-                self.goal = self._sample_goal().copy()
+        self.goal = self._sample_goal().copy()
 
         obs = self._get_obs()
         return obs
 
-    def _sample_object(self):
-        object_x = self.np_random.uniform(X_OBJECT_RANGE[0], X_OBJECT_RANGE[1])
-        object_y = self.np_random.uniform(Y_OBJECT_RANGE[0], Y_OBJECT_RANGE[1])
-        object_xpos = [object_x, object_y]
-        return object_xpos.copy()
-
     def _sample_goal(self):
-        goal_x = self.np_random.uniform(X_OBJECT_RANGE[0], X_OBJECT_RANGE[1])
-        goal_y = self.np_random.uniform(Y_OBJECT_RANGE[0], Y_OBJECT_RANGE[1])
-        goal_z = self.height_offset
+        goal = self.initial_gripper_xpos[:3] + self.np_random.uniform(
+            -self.target_range, self.target_range, size=3
+        )
+        goal += self.target_offset
+        goal[2] = self.height_offset
         if self.target_in_the_air and self.np_random.uniform() < 0.5:
-            goal_z += self.np_random.uniform(*TARGET_HEIGHT_RANGE)
-        goal = np.array([goal_x, goal_y, goal_z])
+            goal[2] += self.np_random.uniform(0, 0.2)
+
+        limit_obj_loc(goal)
+
         return goal.copy()
 
     def _get_obs(self):
@@ -467,3 +445,38 @@ class MyCobotPickAndPlace(MujocoEnv):
                 (lift_mult - grasp_mult)
 
         return r_reach, r_grasp, r_lift
+
+    def _env_setup(self, initial_qpos):
+        if self.fetch_env:
+            if self.controller_type == 'mocap':
+                self._reset_mocap()
+            else:
+                mujoco.mj_resetDataKeyframe(self.model, self.data, 0)
+                mujoco.mj_forward(self.model, self.data)
+
+        # Extract information for sampling goals.
+        self.initial_gripper_xpos = mujoco_utils.get_site_xpos(
+            self.model, self.data, "EEF").copy()
+
+        # Hide object in Reach env
+        if not self.has_object:
+            object_id = mujoco.mj_name2id(
+                self.model, mujoco.mjtObj.mjOBJ_GEOM, 'object0')
+            site_id = mujoco.mj_name2id(
+                self.model, mujoco.mjtObj.mjOBJ_SITE, 'object0')
+            self.model.geom_size[object_id] = np.zeros(3)
+            self.model.site_size[site_id] = np.zeros(3)
+
+        self.height_offset = mujoco_utils.get_site_xpos(
+            self.model, self.data, "object0")[2]
+
+    def _reset_mocap(self):
+        mujoco_utils.set_mocap_quat(
+            self.model, self.data, "robot0:mocap", np.array([0.70809474, 0, -0.70611744, 0]))
+        mujoco.mj_step(self.model, self.data, nstep=self.frame_skip)
+        mujoco_utils.set_mocap_quat(
+            self.model, self.data, "robot0:mocap", np.array([0.50235287, -0.499, -0.5, 0.49764296]))
+        mujoco.mj_step(self.model, self.data, nstep=self.frame_skip)
+        mujoco_utils.set_mocap_pos(
+            self.model, self.data, "robot0:mocap", np.array([0.0138673, -0.13135342, 1.010216]))
+        mujoco.mj_step(self.model, self.data, nstep=self.frame_skip * 3)
