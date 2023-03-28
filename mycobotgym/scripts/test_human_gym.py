@@ -20,7 +20,7 @@ def print_contacts(model, data):
 # env = gym.make("FetchPickAndPlace-v2", render_mode="human")
 # env = gym.make("FrankaKitchen-v1", render_mode="human", ik_controller=False)
 # env = gym.make("ReachObjectEnv-Sparse-delta_joint-v0", render_mode="human")
-env = gym.make("MyCobotFetchPickAndPlace-Sparse-mocap-v0",
+env = gym.make("MyCobotFetchPickAndPlace-Sparse-delta_joint-v0",
                render_mode="human")
 # env = gym.make("MyCobotFetch", render_mode="human")
 
@@ -33,8 +33,7 @@ env.render()
 for i in range(1000):
     # print(env.data.qpos)
     # print(env.data.qpos)
-    # mujoco.mj_step(env.model, env.data, nstep=10)
-    env.render()
+    # env.render()
     # mujoco.mj_step(env.model, env.data, nstep=20)
     # print(env.data.mocap_quat[0])
     # env.render()
@@ -47,9 +46,10 @@ for i in range(1000):
     # action = np.zeros(7)
     # action[:3] = delta.copy()
 
-    # action = env.action_space.sample()  # User-defined policy function
-    # observation, reward, terminated, truncated, info = env.step(action)
+    action = env.action_space.sample()  # User-defined policy function
+    observation, reward, terminated, truncated, info = env.step(action)
     # env.data.ctrl = np.array(action)
+    # mujoco_utils.reset_mocap2body_xpos(env.model, env.data)
     # mujoco.mj_step(env.model, env.data, 20)
     # env.render()
 

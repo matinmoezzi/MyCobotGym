@@ -31,9 +31,9 @@ def limit_obj_loc(pos):
 
 class MyCobotEnv(MujocoEnv):
     metadata = {"render_modes": [
-        "human", "rgb_array", "depth_array"], "render_fps": 10}
+        "human", "rgb_array", "depth_array"], "render_fps": 50}
 
-    def __init__(self, model_path: str = "./assets/mycobot280.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint', 'delta_joint'] = 'IK', obj_range: float = 0.1, target_range: float = 0.1, target_offset: float = 0.0, target_in_the_air=True, distance_threshold=0.02, initial_qpos: dict = {}, fetch_env: bool = False, reward_type="sparse", frame_skip: int = 50, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
+    def __init__(self, model_path: str = "./assets/mycobot280.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint', 'delta_joint'] = 'IK', obj_range: float = 0.1, target_range: float = 0.1, target_offset: float = 0.0, target_in_the_air=True, distance_threshold=0.02, initial_qpos: dict = {}, fetch_env: bool = False, reward_type="sparse", frame_skip: int = 10, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
 
         self.block_gripper = block_gripper
         self.has_object = has_object
@@ -71,11 +71,16 @@ class MyCobotEnv(MujocoEnv):
 
         self.init_qpos = self.data.qpos.ravel().copy()
         self.init_qvel = self.data.qvel.ravel().copy()
+        self.init_ctrl = self.data.ctrl.ravel().copy()
 
         self.controller = None
         if self.controller_type == 'IK':
             self.controller = IKController(self.model, self.data)
-            action_size = 7  # 3 translation + 3 rotation (euler) + 1 gripper
+            if self.fetch_env:
+                action_size = 4    # 3 translation + 1 gripper
+            else:
+                # 3 translation + 3 rotation (euler) + 1 gripper
+                action_size = 7
         elif self.controller_type in ['joint', 'delta_joint']:
             action_size = 7  # 6 joint positions + 1 gripper
         elif self.controller_type == 'mocap':
@@ -118,7 +123,10 @@ class MyCobotEnv(MujocoEnv):
             ].copy()
             target_eef_pose = current_eef_pose + \
                 action[:3] * MAX_CARTESIAN_DISPLACEMENT
-            quat_rot = euler2quat(action[3:6] * MAX_ROTATION_DISPLACEMENT)
+            if self.fetch_env:
+                quat_rot = euler2quat(np.zeros(3) * MAX_ROTATION_DISPLACEMENT)
+            else:
+                quat_rot = euler2quat(action[3:6] * MAX_ROTATION_DISPLACEMENT)
             current_eef_quat = np.empty(
                 4
             )  # current orientation of the end effector site in quaternions
@@ -130,7 +138,8 @@ class MyCobotEnv(MujocoEnv):
                 self.data.site_xmat[self.model_names.site_name2id["EEF"]].copy(
                 ),
             )
-            mujoco.mju_mulQuat(target_orientation, quat_rot, current_eef_quat)
+            mujoco.mju_mulQuat(target_orientation,
+                               quat_rot, current_eef_quat)
 
             ctrl_action = np.zeros(7)
 
@@ -152,16 +161,16 @@ class MyCobotEnv(MujocoEnv):
                 mujoco.mj_step(self.model, self.data, nstep=self.frame_skip)
 
         elif self.controller_type == "mocap":
-            mocap_action = np.zeros(8)
-            mocap_action[-1] = action[-1].copy()
+            mocap_action = np.zeros(7)
             mocap_action[:3] = action[:3] * 0.05
+            grip_tcp_quat = self.data.xquat[self.model_names.body_name2id["gripper_tcp"]]
             if self.fetch_env:
                 mocap_action[3:7] = np.array(
                     [0.5, -0.5, -0.5, 0.5])
             else:
                 mocap_action[3:7] = action[3:7]
-            self.data.mocap_pos[0] += action[:3] * 0.005
-            # mujoco_utils.mocap_set_action(self.model, self.data, mocap_action)
+            mocap_action[3:7] -= grip_tcp_quat
+            mujoco_utils.mocap_set_action(self.model, self.data, mocap_action)
             self.data.ctrl[-1] = (
                 self.actuation_center[-1] +
                 action[-1] * self.actuation_range[-1]
@@ -171,6 +180,8 @@ class MyCobotEnv(MujocoEnv):
             # Denormalize the input action from [-1, 1] range to the each actuators control range
             action = self.actuation_center + \
                 action * self.actuation_range
+            if self.fetch_env:
+                action[4:6] = self.init_ctrl[4:6]
             self.do_simulation(action, self.frame_skip)
         elif self.controller_type == 'delta_joint':
             mujoco.mj_forward(self.model, self.data)
@@ -179,6 +190,8 @@ class MyCobotEnv(MujocoEnv):
                 action[-1] * self.actuation_range[-1]
             )
             self.data.ctrl[:-1] += action[:-1] * MAX_JOINT_DISPLACEMENT
+            if self.fetch_env:
+                self.data.ctrl[3:6] = self.init_ctrl[3:6]
             mujoco.mj_step(self.model, self.data, nstep=self.frame_skip)
 
         self._step_callback()
@@ -210,6 +223,7 @@ class MyCobotEnv(MujocoEnv):
     def reset_model(self):
         self.data.qpos[:] = np.copy(self.init_qpos)
         self.data.qvel[:] = np.copy(self.init_qvel)
+        self.data.ctrl[:] = np.copy(self.init_ctrl)
         if self.model.na != 0:
             self.data.act[:] = None
         mujoco.mj_forward(self.model, self.data)
