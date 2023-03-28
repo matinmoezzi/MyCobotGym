@@ -20,7 +20,7 @@ def print_contacts(model, data):
 # env = gym.make("FetchPickAndPlace-v2", render_mode="human")
 # env = gym.make("FrankaKitchen-v1", render_mode="human", ik_controller=False)
 # env = gym.make("ReachObjectEnv-Sparse-delta_joint-v0", render_mode="human")
-env = gym.make("MyCobotFetchPickAndPlace-Sparse-delta_joint-v0",
+env = gym.make("MyCobotFetchPickAndPlace-Sparse-mocap-v0",
                render_mode="human")
 # env = gym.make("MyCobotFetch", render_mode="human")
 
@@ -50,8 +50,8 @@ for i in range(1000):
     observation, reward, terminated, truncated, info = env.step(action)
     # env.data.ctrl = np.array(action)
     # mujoco_utils.reset_mocap2body_xpos(env.model, env.data)
-    # mujoco.mj_step(env.model, env.data, 20)
-    # env.render()
+    # mujoco.mj_step(env.model, env.data, 1)
+    env.render()
 
     # action = np.random.choice([1, -1], size=7)
 

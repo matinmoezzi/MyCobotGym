@@ -31,9 +31,9 @@ def limit_obj_loc(pos):
 
 class MyCobotEnv(MujocoEnv):
     metadata = {"render_modes": [
-        "human", "rgb_array", "depth_array"], "render_fps": 50}
+        "human", "rgb_array", "depth_array"], "render_fps": 25}
 
-    def __init__(self, model_path: str = "./assets/mycobot280.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint', 'delta_joint'] = 'IK', obj_range: float = 0.1, target_range: float = 0.1, target_offset: float = 0.0, target_in_the_air=True, distance_threshold=0.02, initial_qpos: dict = {}, fetch_env: bool = False, reward_type="sparse", frame_skip: int = 10, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
+    def __init__(self, model_path: str = "./assets/mycobot280.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint', 'delta_joint'] = 'IK', obj_range: float = 0.1, target_range: float = 0.1, target_offset: float = 0.0, target_in_the_air=True, distance_threshold=0.02, initial_qpos: dict = {}, fetch_env: bool = False, reward_type="sparse", frame_skip: int = 20, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
 
         self.block_gripper = block_gripper
         self.has_object = has_object
@@ -487,10 +487,10 @@ class MyCobotEnv(MujocoEnv):
     def _reset_mocap(self):
         mujoco_utils.set_mocap_quat(
             self.model, self.data, "robot0:mocap", np.array([0.70809474, 0, -0.70611744, 0]))
-        mujoco.mj_step(self.model, self.data, nstep=self.frame_skip)
+        mujoco.mj_step(self.model, self.data, nstep=self.frame_skip * 8)
         mujoco_utils.set_mocap_quat(
             self.model, self.data, "robot0:mocap", np.array([0.50235287, -0.499, -0.5, 0.49764296]))
-        mujoco.mj_step(self.model, self.data, nstep=self.frame_skip)
+        mujoco.mj_step(self.model, self.data, nstep=self.frame_skip * 8)
         mujoco_utils.set_mocap_pos(
             self.model, self.data, "robot0:mocap", np.array([0.0138673, -0.13135342, 1.010216]))
-        mujoco.mj_step(self.model, self.data, nstep=self.frame_skip * 3)
+        mujoco.mj_step(self.model, self.data, nstep=self.frame_skip * 8)
