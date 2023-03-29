@@ -33,7 +33,7 @@ class MyCobotEnv(MujocoEnv):
     metadata = {"render_modes": [
         "human", "rgb_array", "depth_array"], "render_fps": 25}
 
-    def __init__(self, model_path: str = "./assets/mycobot280.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint', 'delta_joint'] = 'IK', obj_range: float = 0.1, target_range: float = 0.1, target_offset: float = 0.0, target_in_the_air=True, distance_threshold=0.02, initial_qpos: dict = {}, fetch_env: bool = False, reward_type="sparse", frame_skip: int = 20, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
+    def __init__(self, model_path: str = "./assets/mycobot280.xml", has_object=True, block_gripper=False, control_steps=5, controller_type: Literal['mocap', 'IK', 'joint', 'delta_joint'] = 'IK', obj_range: float = 0.1, target_range: float = 0.1, target_offset: float = 0.0, target_in_the_air=True, distance_threshold=0.05, initial_qpos: dict = {}, fetch_env: bool = False, reward_type="sparse", frame_skip: int = 20, default_camera_config: dict = DEFAULT_CAMERA_CONFIG, **kwargs) -> None:
 
         self.block_gripper = block_gripper
         self.has_object = has_object
@@ -175,7 +175,7 @@ class MyCobotEnv(MujocoEnv):
                 self.actuation_center[-1] +
                 action[-1] * self.actuation_range[-1]
             )
-            mujoco.mj_step(self.model, self.data, nstep=self.frame_skip)
+            mujoco.mj_step(self.model, self.data, nstep=self.frame_skip * 10)
         elif self.controller_type == 'joint':
             # Denormalize the input action from [-1, 1] range to the each actuators control range
             action = self.actuation_center + \
