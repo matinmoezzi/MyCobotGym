@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 import mujoco
 from os import path
 import numpy as np
@@ -10,7 +10,8 @@ from gymnasium_robotics.utils.mujoco_utils import MujocoModelNames
 from gymnasium_robotics.utils import mujoco_utils
 from gymnasium_robotics.utils import rotations
 from gymnasium_robotics.utils.rotations import euler2quat
-
+from gymnasium.utils import seeding
+from gymnasium.core import ObsType
 
 DEFAULT_CAMERA_CONFIG = {
     "distance": 2,
@@ -162,7 +163,7 @@ class MyCobotEnv(MujocoEnv):
 
         elif self.controller_type == "mocap":
             mocap_action = np.zeros(7)
-            mocap_action[:3] = action[:3] * 0.05
+            mocap_action[:3] = action[:3] * 0.04
             grip_tcp_quat = self.data.xquat[self.model_names.body_name2id["gripper_tcp"]]
             if self.fetch_env:
                 mocap_action[3:7] = np.array(
@@ -175,7 +176,8 @@ class MyCobotEnv(MujocoEnv):
                 self.actuation_center[-1] +
                 action[-1] * self.actuation_range[-1]
             )
-            mujoco.mj_step(self.model, self.data, nstep=self.frame_skip * 5)
+            mujoco.mj_step(self.model, self.data,
+                           nstep=self.frame_skip)
         elif self.controller_type == 'joint':
             # Denormalize the input action from [-1, 1] range to the each actuators control range
             action = self.actuation_center + \
@@ -227,9 +229,6 @@ class MyCobotEnv(MujocoEnv):
         if self.model.na != 0:
             self.data.act[:] = None
         mujoco.mj_forward(self.model, self.data)
-
-        if self.model.nmocap > 0 and self.fetch_env:
-            self._reset_mocap()
 
         # Randomize object location
         if self.has_object:
@@ -472,6 +471,11 @@ class MyCobotEnv(MujocoEnv):
         self.initial_gripper_xpos = mujoco_utils.get_site_xpos(
             self.model, self.data, "EEF").copy()
 
+        mujoco.mj_forward(self.model, self.data)
+
+        self.height_offset = mujoco_utils.get_site_xpos(
+            self.model, self.data, "object0")[2]
+
         # Hide object in Reach env
         if not self.has_object:
             object_id = mujoco.mj_name2id(
@@ -481,16 +485,24 @@ class MyCobotEnv(MujocoEnv):
             self.model.geom_size[object_id] = np.zeros(3)
             self.model.site_size[site_id] = np.zeros(3)
 
-        self.height_offset = mujoco_utils.get_site_xpos(
-            self.model, self.data, "object0")[2]
 
     def _reset_mocap(self):
         mujoco_utils.set_mocap_quat(
             self.model, self.data, "robot0:mocap", np.array([0.70809474, 0, -0.70611744, 0]))
-        mujoco.mj_step(self.model, self.data, nstep=self.frame_skip * 8)
+        mujoco.mj_step(self.model, self.data, nstep=self.frame_skip * 10)
         mujoco_utils.set_mocap_quat(
             self.model, self.data, "robot0:mocap", np.array([0.50235287, -0.499, -0.5, 0.49764296]))
-        mujoco.mj_step(self.model, self.data, nstep=self.frame_skip * 8)
+        mujoco.mj_step(self.model, self.data, nstep=self.frame_skip * 10)
         mujoco_utils.set_mocap_pos(
             self.model, self.data, "robot0:mocap", np.array([0.0138673, -0.13135342, 1.010216]))
-        mujoco.mj_step(self.model, self.data, nstep=self.frame_skip * 8)
+        mujoco.mj_step(self.model, self.data, nstep=self.frame_skip * 10)
+
+    def reset(self, * , seed: int | None = None,options: dict[str, Any] | None = None)-> tuple[ObsType, dict[str, Any]]:
+        if seed is not None:
+            self._np_random, seed = seeding.np_random(seed)
+        ob = self.reset_model()
+        ob = self.reset_model()
+        if self.render_mode == "human":
+            self.render()
+        return ob, {}
+    
