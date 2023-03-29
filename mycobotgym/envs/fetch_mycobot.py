@@ -148,14 +148,6 @@ def get_base_fetch_env(RobotEnvClass: Union[MujocoPyRobotEnv, MujocoRobotEnv]):
                 "desired_goal": self.goal.copy(),
             }
 
-        def generate_mujoco_observations(self):
-
-            raise NotImplementedError
-
-        def _get_gripper_xpos(self):
-
-            raise NotImplementedError
-
         def _sample_goal(self):
             if self.has_object:
                 goal = self.initial_gripper_xpos[:3] + self.np_random.uniform(
