@@ -175,7 +175,7 @@ class MyCobotEnv(MujocoEnv):
                 self.actuation_center[-1] +
                 action[-1] * self.actuation_range[-1]
             )
-            mujoco.mj_step(self.model, self.data, nstep=self.frame_skip * 10)
+            mujoco.mj_step(self.model, self.data, nstep=self.frame_skip * 5)
         elif self.controller_type == 'joint':
             # Denormalize the input action from [-1, 1] range to the each actuators control range
             action = self.actuation_center + \
