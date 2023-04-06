@@ -68,7 +68,7 @@ class MyCobotEnv(MujocoEnv):
         )
         self.model_names = MujocoModelNames(self.model)
 
-        self._env_setup(self.initial_qpos)
+        self._env_setup()
 
         self.init_qpos = self.data.qpos.ravel().copy()
         self.init_qvel = self.data.qvel.ravel().copy()
@@ -459,7 +459,7 @@ class MyCobotEnv(MujocoEnv):
 
         return r_reach, r_grasp, r_lift
 
-    def _env_setup(self, initial_qpos):
+    def _env_setup(self):
         if self.fetch_env:
             if self.controller_type == 'mocap':
                 self._reset_mocap()

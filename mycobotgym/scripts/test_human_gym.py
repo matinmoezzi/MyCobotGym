@@ -18,9 +18,9 @@ def print_contacts(model, data):
 
 
 # env = gym.make("FetchReach-v3", render_mode="human")
-env = gym.make("MyCobotFetchReach-v1", render_mode="human")
-# env = gym.make("MyCobotFetchReach-Sparse-mocap-v0",
-#                render_mode="human")
+# env = gym.make("MyCobotFetchReach-v1", render_mode="human")
+env = gym.make("MyCobotFetchReach-Sparse-mocap-v0",
+               render_mode="human")
 # env = gym.make("MyCobotFetch", render_mode="human")
 
 # env = env.env.env
@@ -29,7 +29,7 @@ observation = env.reset(seed=4)
 env.render()
 
 action = env.action_space.sample()  # User-defined policy function
-for i in range(1000):
+for i in range(10000):
     # print(env.data.qpos)
     # print(env.data.qpos)
     # env.render()
@@ -45,12 +45,13 @@ for i in range(1000):
     # action = np.zeros(7)
     # action[:3] = delta.copy()
 
-    action = env.action_space.sample()  # User-defined policy function
-    observation, reward, terminated, truncated, info = env.step(action)
+    # if i % 50 == 0:
+    #     action = env.action_space.sample()  # User-defined policy function
+    #     observation, reward, terminated, truncated, info = env.step(action)
     # env.data.ctrl = np.array(action)
     # mujoco_utils.reset_mocap2body_xpos(env.model, env.data)
     # mujoco.mj_step(env.model, env.data, 10)
-    # env.render()
+    env.render()
 
     # action = np.random.choice([1, -1], size=7)
 
