@@ -501,7 +501,6 @@ class MyCobotEnv(MujocoEnv):
         if seed is not None:
             self._np_random, seed = seeding.np_random(seed)
         ob = self.reset_model()
-        ob = self.reset_model()
         if self.render_mode == "human":
             self.render()
         return ob, {}
