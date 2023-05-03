@@ -106,7 +106,7 @@
         conaffinity="1" />
     </body>
 
-    <body mocap="true" name="robot0:mocap" pos="0.0138673  -0.13135342  1.27236">
+    <body mocap="true" name="robot0:mocap" pos="-0.21364658 -0.33613269  1.27235999">
       <geom conaffinity="0" contype="0" pos="0 0 0" rgba="0 0.5 0 0.7" size="0.005 0.005 0.005"
         type="box"></geom>
       <geom conaffinity="0" contype="0" pos="0 0 0" rgba="0 0.5 0 0.1" size="1 0.005 0.005"
@@ -124,7 +124,7 @@
     <!-- side view -->
     <camera name="sideview" pos="0.006 1.240 1.784" xyaxes="-1.000 0.005 -0.000 -0.003 -0.552 0.834" />
 
-    <body name="mycobot" childclass="mycobot" pos="0 -0.35 0.86" quat="1 0 0 1">
+    <body name="mycobot" childclass="mycobot" pos="0 -0.35 0.86" quat="0 0 0 1">
       <geom type="mesh" contype="1" conaffinity="1" group="1" density="0"
         rgba="0.792157 0.819608 0.933333 1" mesh="base_link" />
       <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="base_link" />
@@ -290,11 +290,6 @@
       castshadow="false" pos="0 0 4" dir="0 0 -1" name="light0"></light>
 
   </worldbody>
-  <keyframe>
-    <key name="fetch_env"
-      qpos="-1.55902942e+00 -7.10806595e-01 -8.66798778e-03 -8.63875032e-01 1.57012168e+00  1.56181935e+00  5.19663972e-05  3.24891597e-04 5.19762628e-05  3.15165908e-04  7.01064153e-05 -7.40399546e-05 -2.30000000e-01  2.08696792e-15  8.09980824e-01  1.00000000e+00 3.01251441e-17  1.83424493e-18  3.75733109e-11"
-      qvel="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"></key>
-  </keyframe>
   <actuator>
     <general biastype="affine" name="fingers_actuator" tendon="split" forcerange="-5 5"
       ctrlrange="0 255" gainprm="0.27 0 0" biasprm="0 -100 -10" forcelimited="true"

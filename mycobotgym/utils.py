@@ -302,6 +302,7 @@ class RobotControlViewer(WindowViewer):
             glfw.KEY_U,
         ]:
             # Don't respond on release for sticky control keys.
+            print_state(self.model, self.data)
             return
         else:
             super()._key_callback(window, key, scancode, glfw.RELEASE, mods)

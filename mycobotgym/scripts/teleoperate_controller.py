@@ -23,7 +23,6 @@ def main():
     viewer.cam.elevation = -35
 
     mujoco.mj_step(model, data, nstep=10)
-    print_state(model, data)
     while True:
         mujoco.mj_step(model, data, nstep=10)
         viewer.render()
