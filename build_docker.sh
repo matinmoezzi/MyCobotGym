@@ -14,7 +14,7 @@ else
 fi
 
 echo "docker build --build-arg PARENT_IMAGE=${PARENT}  -t ${TAG}:${VERSION} ."
-docker build --build-arg PARENT_IMAGE=${PARENT} -t ${TAG}:${VERSION} .
+docker build --build-arg PARENT_IMAGE=${PARENT} -t ${TAG}:${VERSION} . --platform linux/amd64
 docker tag ${TAG}:${VERSION} ${TAG}:latest
 
 if [[ ${RELEASE} == "True" ]]; then
