@@ -6,8 +6,7 @@ ENV CODE_DIR /home/$MAMBA_USER
 
 USER root
 
-RUN apt-get -y update && \
-    apt-get -y upgrade && \
+RUN apt-get -y update && \ 
     apt-get -y install git gcc g++ swig cmake ffmpeg build-essential --reinstall
 
 # Install micromamba env and dependencies
