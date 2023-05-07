@@ -290,12 +290,14 @@ class MyCobotEnv(MujocoEnv):
                 grip_pos,
                 object_pos.ravel(),
                 object_rel_pos.ravel(),
-                gripper_state,
-                object_rot.ravel(),
-                object_velp.ravel(),
-                object_velr.ravel(),
-                grip_velp,
-                gripper_vel,
+                
+                # Sim2real mitigating some observation variables
+                # gripper_state,
+                # object_rot.ravel(),
+                # object_velp.ravel(),
+                # object_velr.ravel(),
+                # grip_velp,
+                # gripper_vel,
             ]
         )
 
