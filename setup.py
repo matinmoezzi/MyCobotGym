@@ -9,4 +9,5 @@ setup(
     packages=find_packages(),
     install_requires=["gymnasium_robotics==1.2.0", "mujoco==2.3.2"],
     python_requires=">=3.9",
+    package_data={"MyCobotGym": "assets/*"}
 )
