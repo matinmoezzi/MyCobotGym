@@ -477,9 +477,14 @@ class MyCobotEnv(MujocoEnv):
                 lift_mult - grasp_mult
             )
 
-        r_place = lift_mult + (
-            1 - np.tanh(15.0 * goal_distance(target_pos, object_pos))
-        ) * (place_mult - lift_mult)
+        y_check = np.abs(object_pos[1] - target_pos[1]) < 0.01
+        x_check = np.abs(object_pos[0] - target_pos[0]) < 0.01
+        is_above_target = x_check and y_check
+        dist = np.linalg.norm(target_pos[:2] - object_pos[:2])
+        if is_above_target:
+            r_place = lift_mult + (1 - np.tanh(10.0 * dist)) * (place_mult - lift_mult)
+        else:
+            r_place = r_lift + (1 - np.tanh(10.0 * dist)) * (place_mult - lift_mult)
 
         return r_reach, r_grasp, r_lift, r_place
 
