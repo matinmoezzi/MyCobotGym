@@ -430,7 +430,7 @@ class MyCobotEnv(MujocoEnv):
     def stage_rewards(self):
         """
         Returns staged rewards based on current physical states.
-        Stages consist of reaching, grasping, lifting.
+        Stages consist of reaching, grasping, lifting, placing.
 
         Returns:
             4-tuple:
@@ -438,11 +438,13 @@ class MyCobotEnv(MujocoEnv):
                 - (float) reaching reward
                 - (float) grasping reward
                 - (float) lifting reward
+                - (float) placing reward
         """
 
         reach_mult = 0.1
         grasp_mult = 0.35
-        lift_mult = 0.7
+        lift_mult = 0.5
+        place_mult = 0.7
 
         grip_pos = mujoco_utils.get_site_xpos(self.model, self.data, "EEF")
         object_pos = mujoco_utils.get_site_xpos(self.model, self.data, "object0")
@@ -461,20 +463,25 @@ class MyCobotEnv(MujocoEnv):
         r_grasp = (
             int(
                 self._check_contact(right_finger_layer, object_id)
-                or self._check_contact(left_finger_layer, object_id)
+                and self._check_contact(left_finger_layer, object_id)
             )
             * grasp_mult
         )
 
         r_lift = 0.0
-        if self._check_contact(right_finger_layer, object_id) and self._check_contact(
-            left_finger_layer, object_id
-        ):
-            r_lift = grasp_mult + (
-                1 - np.tanh(15.0 * goal_distance(target_pos, object_pos))
-            ) * (lift_mult - grasp_mult)
+        if r_grasp > 0.0:
+            z_target = target_pos[2] + 0.25
+            object_z_loc = object_pos[2]
+            z_dists = np.maximum(z_target - object_z_loc, 0.0)
+            r_lift = grasp_mult + (1 - np.tanh(15.0 * min(z_dists))) * (
+                lift_mult - grasp_mult
+            )
 
-        return r_reach, r_grasp, r_lift
+        r_place = lift_mult + (
+            1 - np.tanh(15.0 * goal_distance(target_pos, object_pos))
+        ) * (place_mult - lift_mult)
+
+        return r_reach, r_grasp, r_lift, r_place
 
     def _env_setup(self):
         if self.fetch_env:
