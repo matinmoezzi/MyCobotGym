@@ -10,18 +10,15 @@ def print_contacts(model, data):
     for geom1, geom2 in zip(data.contact.geom1, data.contact.geom2):
         body1_id = model.geom_bodyid[geom1]
         body2_id = model.geom_bodyid[geom2]
-        body1_name = mujoco.mj_id2name(
-            model, mujoco.mjtObj.mjOBJ_BODY, body1_id)
-        body2_name = mujoco.mj_id2name(
-            model, mujoco.mjtObj.mjOBJ_BODY, body2_id)
+        body1_name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, body1_id)
+        body2_name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, body2_id)
         print(body1_name, body2_name)
 
 
 # env = gym.make("FetchReach-v3", render_mode="human")
 # env = gym.make("MyCobotFetchReach-v1", render_mode="human")
-env = gym.make("MyCobotFetchReach-Sparse-mocap-v0",
-               render_mode="human")
-# env = gym.make("MyCobotFetch", render_mode="human")
+env = gym.make("MyCobotFetchReach-Sparse-mocap-v0", render_mode="human")
+# env = gym.make("MyCobotReach-Sparse-mocap-v0", render_mode="human")
 
 # env = env.env.env
 observation = env.reset(seed=4)
@@ -41,6 +38,8 @@ for i in range(10000):
     # mujoco.mj_forward(env.model, env.data)
     # obj_pos = mujoco_utils.get_site_xpos(env.model, env.data, "target0")
     # grip_pos = mujoco_utils.get_site_xpos(env.model, env.data, "EEF")
+    # mpos = env.data.mocap_pos[0]
+    # print(f"gripper: {grip_pos}, mocap: {mpos}")
     # delta = (obj_pos - grip_pos) / 0.2
     # action = np.zeros(7)
     # action[:3] = delta.copy()

@@ -13,8 +13,7 @@ def main():
     mujoco.mj_forward(model, data)
     # viewer set up
     viewer = RobotControlViewer(model, data)
-    body_id = mujoco.mj_name2id(
-        model, mujoco.mjtObj.mjOBJ_BODY, 'gripper_base')
+    body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "gripper_base")
     lookat = data.xpos[body_id]
     for idx, value in enumerate(lookat):
         viewer.cam.lookat[idx] = value
@@ -23,11 +22,12 @@ def main():
     viewer.cam.elevation = -35
 
     mujoco.mj_step(model, data, nstep=10)
+    mujoco.mj_resetDataKeyframe(model, data, 0)
     print_state(model, data)
     while True:
         mujoco.mj_step(model, data, nstep=10)
         viewer.render()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

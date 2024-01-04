@@ -490,11 +490,16 @@ class MyCobotEnv(MujocoEnv):
 
     def _env_setup(self):
         if self.fetch_env:
-            if self.controller_type == "mocap":
-                self._reset_mocap()
-            else:
-                mujoco.mj_resetDataKeyframe(self.model, self.data, 0)
-                mujoco.mj_forward(self.model, self.data)
+            mujoco.mj_resetDataKeyframe(self.model, self.data, 0)
+        mujoco.mj_forward(self.model, self.data)
+
+        # Alternative method to reset the mocap controller (not recommended)
+        # if self.fetch_env:
+        #     if self.controller_type == "mocap":
+        #         self._reset_mocap()
+        #     else:
+        #         mujoco.mj_resetDataKeyframe(self.model, self.data, 0)
+        #         mujoco.mj_forward(self.model, self.data)
 
         # Extract information for sampling goals.
         self.initial_gripper_xpos = mujoco_utils.get_site_xpos(
