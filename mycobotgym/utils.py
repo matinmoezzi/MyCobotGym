@@ -57,7 +57,7 @@ class MyCobotArmController:
     SPEED_CHANGE_PERCENT = 0.2
 
     def __init__(self, model, data):
-        self._speeds = np.array([0.01, 5, 0.5, 0.1])
+        self._speeds = np.array([0.01, 5, 0.1, 0.1])
         self.model = model
         self.data = data
 
@@ -119,7 +119,8 @@ class MyCobotArmController:
         euler[self.dof_dims_axes] = ctrl
         quat = rotations.euler2quat(euler)
         gripper_id = mujoco.mj_name2id(
-            self.model, mujoco.mjtObj.mjOBJ_BODY, 'gripper_tcp')
+            self.model, mujoco.mjtObj.mjOBJ_BODY, "gripper_tcp"
+        )
         gripper_quat = self.data.xquat[gripper_id]
 
         return rotations.quat_mul(gripper_quat, quat) - gripper_quat
@@ -155,10 +156,14 @@ class MyCobotArmController:
         """
         Open/close gripper.
         """
+        gripper_ctrlrange = self.model.actuator_ctrlrange[0]
         ctrl = self.zero_control()
         ctrl[-1] = self.gripper_speed * direction.value
-        self.data.ctrl = ctrl
-        mujoco.mj_step(self.model, self.data)
+        self.data.ctrl += ctrl
+        self.data.ctrl = np.clip(
+            self.data.ctrl, gripper_ctrlrange[0], gripper_ctrlrange[1]
+        )
+        mujoco.mj_step(self.model, self.data, nstep=10)
 
     def rot_x(self, direction: Direction) -> np.ndarray:
         """
@@ -192,8 +197,7 @@ class MyCobotArmController:
         """
         Tilt the gripper
         """
-        quat = self.get_tcp_quat(
-            np.array([self.wrist_speed * direction.value, 0]))
+        quat = self.get_tcp_quat(np.array([self.wrist_speed * direction.value, 0]))
         self.data.mocap_quat[0] += quat
         mujoco.mj_step(self.model, self.data)
 
@@ -201,8 +205,7 @@ class MyCobotArmController:
         """
         Rotate the wrist joint.
         """
-        quat = self.get_tcp_quat(
-            np.array([0, self.wrist_speed * direction.value]))
+        quat = self.get_tcp_quat(np.array([0, self.wrist_speed * direction.value]))
         self.data.mocap_quat[0] += quat
         mujoco.mj_step(self.model, self.data)
 
@@ -224,7 +227,6 @@ class RobotControlViewer(WindowViewer):
     """
 
     def __init__(self, model, data):
-
         self.controller = MyCobotArmController(model, data)
         self.model = model
         self.data = data
@@ -314,46 +316,68 @@ class RobotControlViewer(WindowViewer):
             "Go backward/forward/left/right",
             "[up]/[down]/[left]/[right] arrow",
         )
-        self.add_overlay(mujoco.mjtGridPos.mjGRID_TOPRIGHT,
-                         "Go up/down", "[Z]/[X]")
-        self.add_overlay(mujoco.mjtGridPos.mjGRID_TOPRIGHT,
-                         "Open/Close gripper", "[V]/[C]")
+        self.add_overlay(mujoco.mjtGridPos.mjGRID_TOPRIGHT, "Go up/down", "[Z]/[X]")
+        self.add_overlay(
+            mujoco.mjtGridPos.mjGRID_TOPRIGHT, "Open/Close gripper", "[V]/[C]"
+        )
         # self.add_overlay(mujoco.mjtGridPos.mjGRID_TOPRIGHT,
         #                  "Rotate wrist CW/CCW", "[Q]/[W]")
-        self.add_overlay(mujoco.mjtGridPos.mjGRID_TOPRIGHT,
-                         "Rotate z axis", "[Y]/[U]")
-        self.add_overlay(mujoco.mjtGridPos.mjGRID_TOPRIGHT,
-                         "Rotate y axis", "[R]/[T]")
-        self.add_overlay(mujoco.mjtGridPos.mjGRID_TOPRIGHT,
-                         "Rotate x axis", "[N]/[M]")
-        self.add_overlay(mujoco.mjtGridPos.mjGRID_TOPRIGHT,
-                         "Slow down/Speed up", "[-]/[=]")
-        self.add_overlay(mujoco.mjtGridPos.mjGRID_TOPRIGHT,
-                         "Controller Speed", "%s" % self.controller._speeds)
+        self.add_overlay(mujoco.mjtGridPos.mjGRID_TOPRIGHT, "Rotate z axis", "[Y]/[U]")
+        self.add_overlay(mujoco.mjtGridPos.mjGRID_TOPRIGHT, "Rotate y axis", "[R]/[T]")
+        self.add_overlay(mujoco.mjtGridPos.mjGRID_TOPRIGHT, "Rotate x axis", "[N]/[M]")
+        self.add_overlay(
+            mujoco.mjtGridPos.mjGRID_TOPRIGHT, "Slow down/Speed up", "[-]/[=]"
+        )
+        self.add_overlay(
+            mujoco.mjtGridPos.mjGRID_TOPRIGHT,
+            "Controller Speed",
+            "%s" % self.controller._speeds,
+        )
 
         mujoco.mj_step(self.model, self.data, nstep=200)
         goal = mujoco_utils.get_site_xpos(self.model, self.data, "target0")
         obj = mujoco_utils.get_site_xpos(self.model, self.data, "object0")
         eef = mujoco_utils.get_site_xpos(self.model, self.data, "EEF")
 
-        self.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "distance_object_target", "%.3f" %
-                         goal_distance(obj, goal))
-        self.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "distance_gripper_object", "%.3f" %
-                         goal_distance(eef, obj))
-        self.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "distance_gripper_target", "%.3f" %
-                         goal_distance(eef, goal))
+        self.add_overlay(
+            mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
+            "distance_object_target",
+            "%.3f" % goal_distance(obj, goal),
+        )
+        self.add_overlay(
+            mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
+            "distance_gripper_object",
+            "%.3f" % goal_distance(eef, obj),
+        )
+        self.add_overlay(
+            mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
+            "distance_gripper_target",
+            "%.3f" % goal_distance(eef, goal),
+        )
 
         model_names = MujocoModelNames(self.model)
         robot_qpos, robot_qvel = mujoco_utils.robot_get_obs(
-            self.model, self.data, model_names.joint_names)
-        self.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
-                         "qpos", "%s" % robot_qpos)
-        self.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
-                         "mocap_pos", "%s" % self.data.mocap_pos)
-        self.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
-                         "mocap_quat", "%s" % self.data.mocap_quat)
-        self.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
-                         "gripper_pos", "%s" % eef)
+            self.model, self.data, model_names.joint_names
+        )
+        self.add_overlay(
+            mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "qpos", "%s" % robot_qpos
+        )
+        self.add_overlay(
+            mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
+            "mocap_pos",
+            "%s" % self.data.mocap_pos,
+        )
+        self.add_overlay(
+            mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
+            "mocap_quat",
+            "%s" % self.data.mocap_quat,
+        )
+        self.add_overlay(
+            mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT, "gripper_pos", "%s" % eef
+        )
         gripper_mocap_rel_pos = self.data.mocap_pos[0].copy() - eef
-        self.add_overlay(mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
-                         "gripper_mocap_rel_pos", "%s" % gripper_mocap_rel_pos)
+        self.add_overlay(
+            mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
+            "gripper_mocap_rel_pos",
+            "%s" % gripper_mocap_rel_pos,
+        )
