@@ -17,7 +17,7 @@ def print_contacts(model, data):
 
 # env = gym.make("FetchReach-v3", render_mode="human")
 # env = gym.make("MyCobotFetchReach-v1", render_mode="human")
-env = gym.make("MyCobotFetchReach-Sparse-mocap-v0", render_mode="human")
+env = gym.make("MyCobotReach-Sparse-delta_joint-v0", render_mode="human")
 # env = gym.make("MyCobotReach-Sparse-IK-v0", render_mode="human")
 
 # env = env.env.env
@@ -60,8 +60,8 @@ for i in range(10000):
     if i % 500 == 0:
         env.reset()
 
-    # action = env.action_space.sample()  # User-defined policy function
-    # observation, reward, terminated, truncated, info = env.step(action)
+    action = env.action_space.sample()  # User-defined policy function
+    observation, reward, terminated, truncated, info = env.step(action)
     # if i % 100 == 0:
     #     observation = env.reset()
 #     # frame = env.render(mode="rgb_array")

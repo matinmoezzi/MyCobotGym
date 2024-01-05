@@ -22,7 +22,7 @@ DEFAULT_CAMERA_CONFIG = {
 
 MAX_CARTESIAN_DISPLACEMENT = 0.2
 MAX_ROTATION_DISPLACEMENT = 0.5
-MAX_JOINT_DISPLACEMENT = 0.5
+MAX_JOINT_DISPLACEMENT = 0.1
 
 
 def limit_obj_loc(pos):
@@ -194,14 +194,14 @@ class MyCobotEnv(MujocoEnv):
                 action[4:6] = self.init_ctrl[4:6]
             self.do_simulation(action, self.frame_skip)
         elif self.controller_type == "delta_joint":
-            mujoco.mj_forward(self.model, self.data)
-            self.data.ctrl[-1] = (
-                self.actuation_center[-1] + action[-1] * self.actuation_range[-1]
-            )
+            # Denormalize the input action from [-1, 1] range to the each actuators control range
+            action = self.actuation_center + action * self.actuation_range
+            self.data.ctrl[-1] = action[-1]
             self.data.ctrl[:-1] += action[:-1] * MAX_JOINT_DISPLACEMENT
             if self.fetch_env:
                 self.data.ctrl[3:6] = self.init_ctrl[3:6]
-            mujoco.mj_step(self.model, self.data, nstep=self.frame_skip)
+            self.do_simulation(action, self.frame_skip)
+            # mujoco.mj_step(self.model, self.data, nstep=self.frame_skip)
 
         self._step_callback()
 
