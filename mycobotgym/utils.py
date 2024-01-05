@@ -1,4 +1,5 @@
 from os import path
+import random
 import numpy as np
 from typing import Optional
 import mujoco
@@ -9,6 +10,23 @@ from gymnasium.envs.mujoco.mujoco_rendering import WindowViewer
 from enum import Enum
 from gymnasium_robotics.utils import rotations
 from gymnasium_robotics.utils.mujoco_utils import MujocoModelNames
+
+
+def create_random_3d_coord(lower_bound, upper_bound):
+    """
+    Create a random 3D coordinate within the specified ranges.
+    The function accepts two arguments, lower_bound and upper_bound, for each axis.
+    """
+    coord = []
+    for _ in range(3):
+        # Choose whether to use the lower or upper range for each axis
+        if random.choice([True, False]):
+            # Lower range
+            coord.append(random.uniform(lower_bound[0], lower_bound[1]))
+        else:
+            # Upper range
+            coord.append(random.uniform(upper_bound[0], upper_bound[1]))
+    return np.array(coord)
 
 
 def goal_distance(goal_a, goal_b):

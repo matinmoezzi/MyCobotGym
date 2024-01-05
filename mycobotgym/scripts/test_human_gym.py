@@ -18,7 +18,7 @@ def print_contacts(model, data):
 # env = gym.make("FetchReach-v3", render_mode="human")
 # env = gym.make("MyCobotFetchReach-v1", render_mode="human")
 env = gym.make("MyCobotFetchReach-Sparse-mocap-v0", render_mode="human")
-# env = gym.make("MyCobotReach-Sparse-mocap-v0", render_mode="human")
+# env = gym.make("MyCobotReach-Sparse-IK-v0", render_mode="human")
 
 # env = env.env.env
 observation = env.reset(seed=4)
@@ -38,6 +38,7 @@ for i in range(10000):
     # mujoco.mj_forward(env.model, env.data)
     # obj_pos = mujoco_utils.get_site_xpos(env.model, env.data, "target0")
     # grip_pos = mujoco_utils.get_site_xpos(env.model, env.data, "EEF")
+    # print(grip_pos)
     # mpos = env.data.mocap_pos[0]
     # print(f"gripper: {grip_pos}, mocap: {mpos}")
     # delta = (obj_pos - grip_pos) / 0.2
@@ -56,7 +57,7 @@ for i in range(10000):
 
     # action *= 2
     # observation, reward, terminated, truncated, info = env.step(action)
-    if i % 100 == 0:
+    if i % 500 == 0:
         env.reset()
 
     # action = env.action_space.sample()  # User-defined policy function

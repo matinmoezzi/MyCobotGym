@@ -41,7 +41,6 @@ class MyCobotEnv(MujocoEnv):
         control_steps=5,
         controller_type: Literal["mocap", "IK", "joint", "delta_joint"] = "IK",
         obj_range: float = 0.1,
-        target_range: float = 0.1,
         target_offset: float = 0.0,
         target_in_the_air=True,
         distance_threshold=0.05,
@@ -61,7 +60,6 @@ class MyCobotEnv(MujocoEnv):
         self.controller_type = controller_type
         self.initial_qpos = initial_qpos
         self.fetch_env = fetch_env
-        self.target_range = target_range
         self.target_offset = target_offset
         self.obj_range = obj_range
         self.goal = np.zeros(3)
@@ -278,15 +276,13 @@ class MyCobotEnv(MujocoEnv):
         return obs
 
     def _sample_goal(self):
-        goal = self.initial_gripper_xpos[:3] + self.np_random.uniform(
-            -self.target_range, self.target_range, size=3
-        )
+        goal = create_random_3d_coord([-0.25, -0.035], [0.035, 0.25])
         goal += self.target_offset
         goal[2] = self.height_offset
         if self.target_in_the_air and self.np_random.uniform() < 0.5:
-            goal[2] += self.np_random.uniform(0, 0.2)
+            goal[2] += self.np_random.uniform(0, 0.3)
 
-        limit_obj_loc(goal)
+        # limit_obj_loc(goal)
 
         return goal.copy()
 
