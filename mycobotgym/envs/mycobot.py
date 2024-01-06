@@ -5,7 +5,6 @@ import numpy as np
 from mycobotgym.utils import *
 from gymnasium import spaces
 from gymnasium.envs.mujoco.mujoco_env import MujocoEnv
-from gymnasium_robotics.envs.franka_kitchen.ik_controller import IKController
 from gymnasium_robotics.utils.mujoco_utils import MujocoModelNames
 from gymnasium_robotics.utils import mujoco_utils
 from gymnasium_robotics.utils import rotations
@@ -90,6 +89,8 @@ class MyCobotEnv(MujocoEnv):
 
         self.controller = None
         if self.controller_type == "IK":
+            from utils import IKController
+
             self.controller = IKController(self.model, self.data)
             if self.fetch_env:
                 action_size = 4  # 3 translation + 1 gripper
