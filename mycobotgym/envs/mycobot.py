@@ -467,10 +467,10 @@ class MyCobotEnv(MujocoEnv):
 
         r_lift = 0.0
         if r_grasp > 0.0:
-            z_target = target_pos[2] + 0.25
+            z_target = target_pos[2] + 0.01
             object_z_loc = object_pos[2]
             z_dists = np.maximum(z_target - object_z_loc, 0.0)
-            r_lift = grasp_mult + (1 - np.tanh(15.0 * min(z_dists))) * (
+            r_lift = grasp_mult + (1 - np.tanh(15.0 * z_dists)) * (
                 lift_mult - grasp_mult
             )
 
