@@ -89,7 +89,7 @@ class MyCobotEnv(MujocoEnv):
 
         self.controller = None
         if self.controller_type == "IK":
-            from utils import IKController
+            from mycobotgym.utils import IKController
 
             self.controller = IKController(self.model, self.data)
             if self.fetch_env:
