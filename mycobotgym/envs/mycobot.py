@@ -48,7 +48,7 @@ class MyCobotEnv(MujocoEnv):
         reward_type="sparse",
         frame_skip: int = 20,
         default_camera_config: dict = DEFAULT_CAMERA_CONFIG,
-        **kwargs
+        **kwargs,
     ) -> None:
         self.block_gripper = block_gripper
         self.has_object = has_object
@@ -92,12 +92,14 @@ class MyCobotEnv(MujocoEnv):
             from mycobotgym.utils import IKController
 
             self.controller = IKController(self.model, self.data)
+
             if self.fetch_env:
                 action_size = 4  # 3 translation + 1 gripper
             else:
                 # 3 translation + 3 rotation (euler) + 1 gripper
                 action_size = 7
         elif self.controller_type in ["joint", "delta_joint"]:
+            assert not self.fetch_env, "Joint controller not supported for Fetch env"
             action_size = 7  # 6 joint positions + 1 gripper
         elif self.controller_type == "mocap":
             if self.fetch_env:
@@ -133,26 +135,25 @@ class MyCobotEnv(MujocoEnv):
     def step(self, action):
         action = np.clip(action, self.action_space.low, self.action_space.high)
         if self.controller_type == "IK":
-            assert self.controller is not None
-            current_eef_pose = self.data.site_xpos[
-                self.model_names.site_name2id["EEF"]
-            ].copy()
-            target_eef_pose = current_eef_pose + action[:3] * MAX_CARTESIAN_DISPLACEMENT
+            # Actions are displacement in cartesian of EEF
+            current_pos = mujoco_utils.get_site_xpos(self.model, self.data, "EEF")
+            target_pos = current_pos + action[:3] * MAX_CARTESIAN_DISPLACEMENT
+            target_quat = np.zeros(4)
             if self.fetch_env:
-                quat_rot = euler2quat(np.zeros(3) * MAX_ROTATION_DISPLACEMENT)
+                target_quat = np.array([0, -0.707, 0, 0.707])
             else:
                 quat_rot = euler2quat(action[3:6] * MAX_ROTATION_DISPLACEMENT)
-            current_eef_quat = np.empty(
-                4
-            )  # current orientation of the end effector site in quaternions
-            target_orientation = np.empty(
-                4
-            )  # desired end effector orientation in quaternions
-            mujoco.mju_mat2Quat(
-                current_eef_quat,
-                self.data.site_xmat[self.model_names.site_name2id["EEF"]].copy(),
-            )
-            mujoco.mju_mulQuat(target_orientation, quat_rot, current_eef_quat)
+                current_eef_quat = np.empty(
+                    4
+                )  # current orientation of the end effector site in quaternions
+                target_quat = np.empty(
+                    4
+                )  # desired end effector orientation in quaternions
+                mujoco.mju_mat2Quat(
+                    current_eef_quat,
+                    self.data.site_xmat[self.model_names.site_name2id["EEF"]].copy(),
+                )
+                mujoco.mju_mulQuat(target_quat, quat_rot, current_eef_quat)
 
             ctrl_action = np.zeros(7)
 
@@ -162,13 +163,12 @@ class MyCobotEnv(MujocoEnv):
             )
 
             for _ in range(self.control_steps):
-                delta_qpos = self.controller.compute_qpos_delta(
-                    target_eef_pose, target_orientation
-                )
+                delta_qpos = self.controller.compute_qpos_delta(target_pos, target_quat)
                 ctrl_action[:6] = self.data.ctrl.copy()[:6] + delta_qpos[:6]
 
                 # Do not use `do_simulation`` method from MujocoEnv: value error due to discrepancy between
                 # the action space and the simulation control input when using IK controller.
+                # TODO: eliminate error check in MujocoEnv (action space can be different from simulaton control input).
                 self.data.ctrl[:] = ctrl_action
                 mujoco.mj_step(self.model, self.data, nstep=self.frame_skip)
 
@@ -191,20 +191,17 @@ class MyCobotEnv(MujocoEnv):
             )
             mujoco.mj_step(self.model, self.data, nstep=self.frame_skip)
         elif self.controller_type == "joint":
+            assert not self.fetch_env, "Joint controller not supported for Fetch env"
             # Denormalize the input action from [-1, 1] range to the each actuators control range
             action = self.actuation_center + action * self.actuation_range
-            if self.fetch_env:
-                action[4:6] = self.init_ctrl[4:6]
             self.do_simulation(action, self.frame_skip)
         elif self.controller_type == "delta_joint":
+            assert not self.fetch_env, "Joint controller not supported for Fetch env"
             # Denormalize the input action from [-1, 1] range to the each actuators control range
             action = self.actuation_center + action * self.actuation_range
             self.data.ctrl[-1] = action[-1]
             self.data.ctrl[:-1] += action[:-1] * MAX_JOINT_DISPLACEMENT
-            if self.fetch_env:
-                self.data.ctrl[3:6] = self.init_ctrl[3:6]
             self.do_simulation(action, self.frame_skip)
-            # mujoco.mj_step(self.model, self.data, nstep=self.frame_skip)
 
         self._step_callback()
 
