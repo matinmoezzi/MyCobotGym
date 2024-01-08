@@ -174,7 +174,7 @@ class MyCobotEnv(MujocoEnv):
 
         elif self.controller_type == "mocap":
             mocap_action = np.zeros(7)
-            mocap_action[:3] = action[:3] * 0.04
+            mocap_action[:3] = action[:3] * 0.05
             grip_tcp_quat = self.data.xquat[
                 self.model_names.body_name2id["gripper_tcp"]
             ]
@@ -182,7 +182,9 @@ class MyCobotEnv(MujocoEnv):
                 mocap_action[3:7] = np.array([0.5, -0.5, -0.5, 0.5])
             else:
                 mocap_action[3:7] = action[3:7]
-            mocap_action[3:7] -= grip_tcp_quat
+            mocap_action[
+                3:7
+            ] -= grip_tcp_quat  # mocap_set_action in mujoco_utils.py assumes the action is relative to the current pose
             mujoco_utils.mocap_set_action(self.model, self.data, mocap_action)
             self.data.ctrl[-1] = (
                 self.actuation_center[-1] + action[-1] * self.actuation_range[-1]
