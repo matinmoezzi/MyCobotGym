@@ -18,6 +18,10 @@ for reward_type, has_object, controller, fetch in itertools.product(
         "fetch_env": fetch,
     }
 
+    if fetch:
+        if controller in ["joint", "delta_joint"]:
+            continue
+
     fetch_env = "Fetch" if fetch else ""
     name = (
         f"MyCobot{fetch_env}PickAndPlace" if has_object else f"MyCobot{fetch_env}Reach"
