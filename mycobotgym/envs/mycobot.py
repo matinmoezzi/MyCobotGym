@@ -560,7 +560,7 @@ class MyCobotImgEnv(MyCobotEnv):
     def _get_obs(self):
         images_sensors = {
             name: self._get_rgb_image_from_cam(name)
-            for name in ["birdview", "backview", "sideview", "frontview"]
+            for name in ["birdview", "gripper_camera_rgb", "sideview", "frontview"]
         }
         combined_image = combine_images(*list(images_sensors.values()))
 
