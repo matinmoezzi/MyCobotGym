@@ -1,4 +1,3 @@
-from os import path
 import random
 import numpy as np
 from typing import Optional
@@ -493,3 +492,21 @@ class IKController:
         joint_delta = jac_joints.T.dot(error)
         # Least-squares solution
         return np.linalg.lstsq(hess_approx, joint_delta, rcond=-1)[0]
+
+
+def combine_images(image1, image2, image3, image4):
+    height, width, channels = image1.shape
+    assert all(
+        image.shape == (height, width, channels) for image in [image2, image3, image4]
+    )
+
+    # Create a new array with twice the width and height
+    combined_image = np.zeros((height * 2, width * 2, channels), dtype=image1.dtype)
+
+    # Place each image in the combined array
+    combined_image[0:height, 0:width] = image1  # Top left
+    combined_image[0:height, width : width * 2] = image2  # Top right
+    combined_image[height : height * 2, 0:width] = image3  # Bottom left
+    combined_image[height : height * 2, width : width * 2] = image4  # Bottom right
+
+    return combined_image

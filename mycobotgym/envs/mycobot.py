@@ -109,19 +109,7 @@ class MyCobotEnv(MujocoEnv):
                 action_size = 8
 
         obs = self._get_obs()
-        self.observation_space = spaces.Dict(
-            dict(
-                desired_goal=spaces.Box(
-                    -np.inf, np.inf, shape=obs["achieved_goal"].shape, dtype="float64"
-                ),
-                achieved_goal=spaces.Box(
-                    -np.inf, np.inf, shape=obs["achieved_goal"].shape, dtype="float64"
-                ),
-                observation=spaces.Box(
-                    -np.inf, np.inf, shape=obs["observation"].shape, dtype="float64"
-                ),
-            )
-        )
+        self._init_obs_space(obs)
 
         self.action_space = spaces.Box(
             low=-1.0, high=1.0, dtype=np.float32, shape=(action_size,)
@@ -131,6 +119,21 @@ class MyCobotEnv(MujocoEnv):
         ctrlrange = self.model.actuator_ctrlrange
         self.actuation_range = (ctrlrange[:, 1] - ctrlrange[:, 0]) / 2.0
         self.actuation_center = (ctrlrange[:, 1] + ctrlrange[:, 0]) / 2.0
+
+    def _init_obs_space(self, obs):
+        self.observation_space = spaces.Dict(
+            dict(
+                desired_goal=spaces.Box(
+                    -np.inf, np.inf, shape=obs["desired_goal"].shape, dtype="float64"
+                ),
+                achieved_goal=spaces.Box(
+                    -np.inf, np.inf, shape=obs["achieved_goal"].shape, dtype="float64"
+                ),
+                observation=spaces.Box(
+                    -np.inf, np.inf, shape=obs["observation"].shape, dtype="float64"
+                ),
+            )
+        )
 
     def step(self, action):
         action = np.clip(action, self.action_space.low, self.action_space.high)
@@ -207,14 +210,10 @@ class MyCobotEnv(MujocoEnv):
 
         obs = self._get_obs()
 
-        info = {"is_success": self._is_success(obs["achieved_goal"], self.goal)}
-        reward = self.compute_reward(obs["achieved_goal"], self.goal, info)
-        terminated = self.compute_terminated(
-            obs["achieved_goal"], obs["desired_goal"], info
-        )
-        truncated = self.compute_truncated(
-            obs["achieved_goal"], obs["desired_goal"], info
-        )
+        info = {"is_success": self._is_success(self.achieved_goal, self.goal)}
+        reward = self.compute_reward(self.achieved_goal, self.goal, info)
+        terminated = self.compute_terminated(self.achieved_goal, self.goal, info)
+        truncated = self.compute_truncated(self.achieved_goal, self.goal, info)
 
         if self.render_mode == "human":
             self.mujoco_renderer.viewer.add_overlay(
@@ -226,19 +225,18 @@ class MyCobotEnv(MujocoEnv):
                 self.mujoco_renderer.viewer.add_overlay(
                     mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
                     "distance_object_target",
-                    "%.3f" % goal_distance(obs["achieved_goal"], self.goal),
+                    "%.3f" % goal_distance(self.achieved_goal, self.goal),
                 )
                 self.mujoco_renderer.viewer.add_overlay(
                     mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
                     "distance_gripper_object",
-                    "%.3f"
-                    % goal_distance(obs["achieved_goal"], obs["observation"][:3]),
+                    "%.3f" % goal_distance(self.achieved_goal, obs["observation"][:3]),
                 )
             else:
                 self.mujoco_renderer.viewer.add_overlay(
                     mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
                     "distance_gripper_target",
-                    "%.3f" % goal_distance(obs["achieved_goal"], self.goal),
+                    "%.3f" % goal_distance(self.achieved_goal, self.goal),
                 )
             self.render()
         return obs, reward, terminated, truncated, info
@@ -318,6 +316,7 @@ class MyCobotEnv(MujocoEnv):
             ]
         )
 
+        self.achieved_goal = achieved_goal.copy()
         return {
             "observation": obs.copy(),
             "achieved_goal": achieved_goal.copy(),
@@ -549,3 +548,29 @@ class MyCobotEnv(MujocoEnv):
         if self.render_mode == "human":
             self.render()
         return ob, {}
+
+
+class MyCobotImgEnv(MyCobotEnv):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _get_rgb_image_from_cam(self, cam_name):
+        return self.mujoco_renderer.render("rgb_array", camera_name=cam_name)
+
+    def _get_obs(self):
+        images_sensors = {
+            name: self._get_rgb_image_from_cam(name)
+            for name in ["birdview", "backview", "sideview", "frontview"]
+        }
+        combined_image = combine_images(*list(images_sensors.values()))
+
+        grip_pos = mujoco_utils.get_site_xpos(self.model, self.data, "EEF")
+        object_pos = mujoco_utils.get_site_xpos(self.model, self.data, "object0")
+        if not self.has_object:
+            self.achieved_goal = grip_pos.copy()
+        else:
+            self.achieved_goal = np.squeeze(object_pos.copy())
+        return combined_image
+
+    def _init_obs_space(self, obs):
+        self.observation_space = spaces.Box(0, 255, shape=obs.shape, dtype=np.uint8)

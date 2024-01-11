@@ -32,3 +32,9 @@ for reward_type, has_object, controller, fetch in itertools.product(
         kwargs=kwargs,
         max_episode_steps=50,
     )
+    gymnasium.register(
+        f"{name}-{REWARD[reward_type]}-{controller}-v1",
+        entry_point="mycobotgym.envs.mycobot:MyCobotImgEnv",
+        kwargs=kwargs,
+        max_episode_steps=50,
+    )
