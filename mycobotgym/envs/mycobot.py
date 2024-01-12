@@ -274,11 +274,11 @@ class MyCobotEnv(MujocoEnv):
         return obs
 
     def _sample_goal(self):
-        goal = create_random_3d_coord([-0.25, -0.035], [0.035, 0.25])
+        goal = create_random_3d_coord([-0.2, -0.04], [0.04, 0.2])
         goal += self.target_offset
         goal[2] = self.height_offset
         if self.target_in_the_air and self.np_random.uniform() < 0.5:
-            goal[2] += self.np_random.uniform(0, 0.3)
+            goal[2] += self.np_random.uniform(0, 0.2)
 
         # limit_obj_loc(goal)
 
