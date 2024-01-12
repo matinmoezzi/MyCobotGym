@@ -1,4 +1,5 @@
 from mycobotgym.utils import *
+from os import path
 
 
 def main():
