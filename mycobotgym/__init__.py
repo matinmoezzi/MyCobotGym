@@ -18,6 +18,7 @@ for reward_type, has_object, controller, fetch in itertools.product(
         "fetch_env": fetch,
     }
 
+    # Fetch envs are not supported for joint and delta_joint controllers (End effector orientation is fixed for Fetch envs)
     if fetch:
         if controller in ["joint", "delta_joint"]:
             continue
@@ -32,6 +33,10 @@ for reward_type, has_object, controller, fetch in itertools.product(
         kwargs=kwargs,
         max_episode_steps=50,
     )
+
+    # Reward Shaping is not supported for image-based envs
+    if reward_type == "reward_shaping":
+        continue
     gymnasium.register(
         f"{name}-{REWARD[reward_type]}-{controller}-v1",
         entry_point="mycobotgym.envs.mycobot:MyCobotImgEnv",
