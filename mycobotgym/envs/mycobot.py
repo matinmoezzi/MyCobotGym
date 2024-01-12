@@ -177,7 +177,7 @@ class MyCobotEnv(MujocoEnv):
 
         elif self.controller_type == "mocap":
             mocap_action = np.zeros(7)
-            mocap_action[:3] = action[:3] * 0.05
+            mocap_action[:3] = action[:3] * 0.1
             grip_tcp_quat = self.data.xquat[
                 self.model_names.body_name2id["gripper_tcp"]
             ]
