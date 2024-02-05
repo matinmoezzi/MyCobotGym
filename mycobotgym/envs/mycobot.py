@@ -564,6 +564,16 @@ class MyCobotImgEnv(MyCobotEnv):
         }
         combined_image = combine_images(*list(images_sensors.values()))
 
+        # import matplotlib.pyplot as plt
+        # from PIL import Image
+
+        # img = Image.fromarray(combined_image)
+        # img = img.resize(size=(64, 64))
+        # img = img.convert("L")
+
+        # plt.imshow(img)
+        # plt.show()
+
         grip_pos = mujoco_utils.get_site_xpos(self.model, self.data, "EEF")
         object_pos = mujoco_utils.get_site_xpos(self.model, self.data, "object0")
         if not self.has_object:
