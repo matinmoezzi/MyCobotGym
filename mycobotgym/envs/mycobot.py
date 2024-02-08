@@ -24,11 +24,6 @@ MAX_ROTATION_DISPLACEMENT = 0.5
 MAX_JOINT_DISPLACEMENT = 0.05
 
 
-def limit_obj_loc(pos):
-    y_threshold = -0.15
-    pos[1] = max(pos[1], y_threshold)
-
-
 class MyCobotEnv(MujocoEnv):
     metadata = {"render_modes": ["human", "rgb_array", "depth_array"], "render_fps": 25}
 
@@ -245,13 +240,10 @@ class MyCobotEnv(MujocoEnv):
         if self.has_object:
             object_xpos = self.initial_gripper_xpos[:2]
             while np.linalg.norm(object_xpos - self.initial_gripper_xpos[:2]) < 0.1:
-                object_xpos = self.initial_gripper_xpos[:2] + self.np_random.uniform(
-                    -self.obj_range, self.obj_range, size=2
-                )
+                object_xpos = self._sample_goal()[:2]
             object_qpos = mujoco_utils.get_joint_qpos(
                 self.model, self.data, "object0:joint"
             )
-            limit_obj_loc(object_xpos)
             assert object_qpos.shape == (7,)
             object_qpos[:2] = object_xpos
             mujoco_utils.set_joint_qpos(
@@ -261,12 +253,14 @@ class MyCobotEnv(MujocoEnv):
         mujoco.mj_forward(self.model, self.data)
 
         self.goal = self._sample_goal().copy()
+        while np.linalg.norm(self.goal[:2] - object_xpos) < 0.1:
+            self.goal = self._sample_goal().copy()
 
         obs = self._get_obs()
         return obs
 
     def _sample_goal(self):
-        goal = create_random_3d_coord([-0.2, -0.04], [0.04, 0.2])
+        goal = create_random_3d_coord([-0.25, -0.1], [0.1, 0.25])
         goal += self.target_offset
         goal[2] = self.height_offset
         if self.target_in_the_air and self.np_random.uniform() < 0.5:
