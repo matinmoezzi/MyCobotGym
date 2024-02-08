@@ -6,7 +6,7 @@ REWARD = {"dense": "Dense", "sparse": "Sparse", "reward_shaping": "RewardShaping
 for reward_type, has_object, controller, fetch in itertools.product(
     ["dense", "sparse", "reward_shaping"],
     [True, False],
-    ["mocap", "IK", "joint", "delta_joint"],
+    ["mocap", "IK", "joint"],
     [True, False],
 ):
     model_path = f"./assets/mycobot280{'_mocap' if controller == 'mocap' else ''}.xml"
@@ -18,9 +18,9 @@ for reward_type, has_object, controller, fetch in itertools.product(
         "fetch_env": fetch,
     }
 
-    # Fetch envs are not supported for joint and delta_joint controllers (End effector orientation is fixed for Fetch envs)
+    # Fetch envs are not supported for joint controller (End effector orientation is fixed for Fetch envs)
     if fetch:
-        if controller in ["joint", "delta_joint"]:
+        if controller == "joint":
             continue
 
     fetch_env = "Fetch" if fetch else ""
