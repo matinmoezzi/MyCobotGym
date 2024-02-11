@@ -57,6 +57,7 @@ class MyCobotEnv(MujocoEnv):
         self.target_offset = target_offset
         self.obj_range = obj_range
         self.goal = np.zeros(3)
+        self.is_success = False
 
         xml_file_path = path.join(
             path.dirname(path.realpath(__file__)),
@@ -202,30 +203,7 @@ class MyCobotEnv(MujocoEnv):
         terminated = self.compute_terminated(self.achieved_goal, self.goal, info)
         truncated = self.compute_truncated(self.achieved_goal, self.goal, info)
 
-        if self.render_mode == "human":
-            self.mujoco_renderer.viewer.add_overlay(
-                mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
-                "is_success",
-                str(info["is_success"]),
-            )
-            if self.has_object:
-                self.mujoco_renderer.viewer.add_overlay(
-                    mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
-                    "distance_object_target",
-                    "%.3f" % goal_distance(self.achieved_goal, self.goal),
-                )
-                self.mujoco_renderer.viewer.add_overlay(
-                    mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
-                    "distance_gripper_object",
-                    "%.3f" % goal_distance(self.achieved_goal, obs["observation"][:3]),
-                )
-            else:
-                self.mujoco_renderer.viewer.add_overlay(
-                    mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
-                    "distance_gripper_target",
-                    "%.3f" % goal_distance(self.achieved_goal, self.goal),
-                )
-            self.render()
+        self.is_success = info["is_success"]
         return obs, reward, terminated, truncated, info
 
     def reset_model(self):
@@ -302,6 +280,7 @@ class MyCobotEnv(MujocoEnv):
             ]
         )
 
+        self.grip_pos = grip_pos.copy()
         self.achieved_goal = achieved_goal.copy()
         return {
             "observation": obs.copy(),
@@ -337,6 +316,31 @@ class MyCobotEnv(MujocoEnv):
         site_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "target0")
         self.model.site_pos[site_id] = self.goal
         mujoco.mj_forward(self.model, self.data)
+
+        if self.render_mode == "human":
+            self.mujoco_renderer._get_viewer("human")
+            self.mujoco_renderer.viewer.add_overlay(
+                mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
+                "is_success",
+                str(self.is_success),
+            )
+            if self.has_object:
+                self.mujoco_renderer.viewer.add_overlay(
+                    mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
+                    "distance_object_target",
+                    "%.3f" % goal_distance(self.achieved_goal, self.goal),
+                )
+                self.mujoco_renderer.viewer.add_overlay(
+                    mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
+                    "distance_gripper_object",
+                    "%.3f" % goal_distance(self.achieved_goal, self.grip_pos),
+                )
+            else:
+                self.mujoco_renderer.viewer.add_overlay(
+                    mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
+                    "distance_gripper_target",
+                    "%.3f" % goal_distance(self.achieved_goal, self.goal),
+                )
 
     def render(self):
         self._render_callback()
@@ -544,20 +548,39 @@ class MyCobotImgEnv(MyCobotEnv):
         return self.mujoco_renderer.render("rgb_array", camera_name=cam_name)
 
     def _get_obs(self):
-        images_sensors = {
-            name: self._get_rgb_image_from_cam(name)
+        images_sensors = [
+            preprocess_frame(self._get_rgb_image_from_cam(name))
             for name in ["birdview", "gripper_camera_rgb", "sideview", "frontview"]
-        }
-        combined_image = combine_images(*list(images_sensors.values()))
+        ]
+        combined_image = np.stack(images_sensors) 
 
         # import matplotlib.pyplot as plt
         # from PIL import Image
 
-        # img = Image.fromarray(combined_image)
-        # img = img.resize(size=(64, 64))
-        # img = img.convert("L")
+        # img1 = Image.fromarray(images_sensors[0])
+        # img2 = Image.fromarray(images_sensors[1])
+        # img3 = Image.fromarray(images_sensors[2])
+        # img4 = Image.fromarray(images_sensors[3])
 
-        # plt.imshow(img)
+        # # Create a figure to hold the subplots
+        # fig, axs = plt.subplots(2, 2)  # This creates a 2x2 grid of subplots
+
+        # # Show each image in its respective subplot
+        # axs[0, 0].imshow(img1)
+        # axs[0, 0].axis('off')  # Remove axis ticks and labels
+
+        # axs[0, 1].imshow(img2)
+        # axs[0, 1].axis('off')
+
+        # axs[1, 0].imshow(img3)
+        # axs[1, 0].axis('off')
+
+        # axs[1, 1].imshow(img4)
+        # axs[1, 1].axis('off')
+
+        # # Optionally, adjust spacing between the images
+        # plt.subplots_adjust(wspace=0.1, hspace=0.1)  # Adjust space as needed
+
         # plt.show()
 
         grip_pos = mujoco_utils.get_site_xpos(self.model, self.data, "EEF")
@@ -566,6 +589,8 @@ class MyCobotImgEnv(MyCobotEnv):
             self.achieved_goal = grip_pos.copy()
         else:
             self.achieved_goal = np.squeeze(object_pos.copy())
+        
+        self.grip_pos = grip_pos.copy()
         return combined_image
 
     def _init_obs_space(self, obs):

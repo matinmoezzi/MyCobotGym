@@ -31,7 +31,7 @@ for reward_type, has_object, controller, fetch in itertools.product(
         f"{name}-{REWARD[reward_type]}-{controller}-v0",
         entry_point="mycobotgym.envs.mycobot:MyCobotEnv",
         kwargs=kwargs,
-        max_episode_steps=100,
+        max_episode_steps=50,
     )
 
     # Reward Shaping is not supported for image-based envs
@@ -41,5 +41,5 @@ for reward_type, has_object, controller, fetch in itertools.product(
         f"{name}-{REWARD[reward_type]}-{controller}-v1",
         entry_point="mycobotgym.envs.mycobot:MyCobotImgEnv",
         kwargs=kwargs,
-        max_episode_steps=100,
+        max_episode_steps=50,
     )

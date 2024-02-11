@@ -510,3 +510,22 @@ def combine_images(image1, image2, image3, image4):
     combined_image[height : height * 2, width : width * 2] = image4  # Bottom right
 
     return combined_image
+
+import cv2
+
+def preprocess_frame(frame, size=(128, 128)):
+    """
+    Convert a frame to grayscale and resize it to the given size.
+
+    Parameters:
+    - frame: The input frame (image) to be processed.
+    - size: The target size (width, height) for the output frame.
+
+    Returns:
+    - The processed frame.
+    """
+    # Convert the frame to grayscale
+    gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # Resize the frame
+    resized_frame = cv2.resize(gray_frame, size, interpolation=cv2.INTER_AREA)
+    return resized_frame
