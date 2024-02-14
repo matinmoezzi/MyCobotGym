@@ -544,12 +544,12 @@ class MyCobotImgEnv(MyCobotEnv):
     def _get_obs(self):
         frame = preprocess_frame(self._get_rgb_image_from_cam("sideview"), (64, 64))
 
-        import matplotlib.pyplot as plt
-        from PIL import Image
+        # import matplotlib.pyplot as plt
+        # from PIL import Image
 
-        img1 = Image.fromarray(frame)
-        plt.imshow(img1)
-        plt.show()
+        # img1 = Image.fromarray(frame)
+        # plt.imshow(img1)
+        # plt.show()
 
         grip_pos = mujoco_utils.get_site_xpos(self.model, self.data, "EEF")
         object_pos = mujoco_utils.get_site_xpos(self.model, self.data, "object0")
@@ -559,7 +559,7 @@ class MyCobotImgEnv(MyCobotEnv):
             self.achieved_goal = np.squeeze(object_pos.copy())
 
         self.grip_pos = grip_pos.copy()
-        return frame
+        return frame[None, ...]
 
     def _init_obs_space(self, obs):
         self.observation_space = spaces.Box(0, 255, shape=obs.shape, dtype=np.uint8)
