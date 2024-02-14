@@ -542,7 +542,7 @@ class MyCobotImgEnv(MyCobotEnv):
         return self.mujoco_renderer.render("rgb_array", camera_name=cam_name)
 
     def _get_obs(self):
-        frame = preprocess_frame(self._get_rgb_image_from_cam("sideview"))
+        frame = preprocess_frame(self._get_rgb_image_from_cam("sideview"), (64, 64))
 
         import matplotlib.pyplot as plt
         from PIL import Image
@@ -559,7 +559,7 @@ class MyCobotImgEnv(MyCobotEnv):
             self.achieved_goal = np.squeeze(object_pos.copy())
 
         self.grip_pos = grip_pos.copy()
-        return frame 
+        return frame
 
     def _init_obs_space(self, obs):
         self.observation_space = spaces.Box(0, 255, shape=obs.shape, dtype=np.uint8)
