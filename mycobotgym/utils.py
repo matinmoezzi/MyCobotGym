@@ -23,7 +23,7 @@ def generate_random_point_inside_rectangle(x_lower, x_upper, y_lower, y_upper):
 
 def goal_distance(goal_a, goal_b):
     assert goal_a.shape == goal_b.shape
-    return np.linalg.norm(goal_a - goal_b, axis=-1)
+    return np.linalg.norm(goal_a - goal_b)
 
 
 def print_state(model, data):
@@ -243,6 +243,54 @@ class RobotControlViewer(WindowViewer):
 
         super().__init__(model, data)
 
+    def stage_rewards(self):
+        """
+        Returns staged rewards based on current physical states.
+        Stages consist of reaching, grasping, lifting, placing.
+
+        Returns:
+            4-tuple:
+
+                - (float) reaching reward
+                - (float) grasping reward
+                - (float) lifting reward
+                - (float) placing reward
+        """
+
+        reach_mult = 0.2
+        grasp_mult = 0.5
+        lift_mult = 0.9
+
+        grip_pos = mujoco_utils.get_site_xpos(self.model, self.data, "EEF")
+        object_pos = mujoco_utils.get_site_xpos(self.model, self.data, "object0")
+        target_pos = mujoco_utils.get_site_xpos(self.model, self.data, "target0")
+
+        r_reach = 0.0
+        r_reach = (1 - np.tanh(goal_distance(grip_pos, object_pos))) * reach_mult
+
+        right_finger_layer = mujoco.mj_name2id(
+            self.model, mujoco.mjtObj.mjOBJ_GEOM, "right_finger_layer"
+        )
+        left_finger_layer = mujoco.mj_name2id(
+            self.model, mujoco.mjtObj.mjOBJ_GEOM, "left_finger_layer"
+        )
+        object_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, "object0")
+        r_grasp = (
+            int(
+                check_contact(self.data, right_finger_layer, object_id)
+                and check_contact(self.data, left_finger_layer, object_id)
+            )
+            * grasp_mult
+        )
+
+        r_lift = 0.0
+        if r_grasp > 0.0:
+            r_lift = grasp_mult + (
+                1 - np.tanh(goal_distance(object_pos, target_pos))
+            ) * (lift_mult - grasp_mult)
+
+        return r_reach, r_grasp, r_lift
+
     def _key_callback(self, window, key, scancode, action, mods):
         if action == glfw.PRESS or action == glfw.REPEAT:
             self._press_key_callback(window, key, scancode, mods)
@@ -391,6 +439,27 @@ class RobotControlViewer(WindowViewer):
             "gripper_mocap_rel_pos",
             "%s" % gripper_mocap_rel_pos,
         )
+        right_finger_layer = mujoco.mj_name2id(
+            self.model, mujoco.mjtObj.mjOBJ_GEOM, "right_finger_layer"
+        )
+        left_finger_layer = mujoco.mj_name2id(
+            self.model, mujoco.mjtObj.mjOBJ_GEOM, "left_finger_layer"
+        )
+        object_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, "object0")
+        grasp = check_contact(
+            self.data, right_finger_layer, object_id
+        ) and check_contact(self.data, left_finger_layer, object_id)
+        self.add_overlay(
+            mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
+            "is_grasp",
+            "%s" % grasp,
+        )
+        reward = max(self.stage_rewards()) * 100
+        self.add_overlay(
+            mujoco.mjtGridPos.mjGRID_BOTTOMRIGHT,
+            "staged_reward",
+            "%s" % reward,
+        )
 
 
 import mujoco
@@ -524,3 +593,12 @@ def preprocess_frame(frame, size=(128, 128)):
     # Resize the frame
     resized_frame = cv2.resize(gray_frame, size, interpolation=cv2.INTER_AREA)
     return resized_frame
+
+
+def check_contact(data, gripper_id, object_id):
+    for contact in data.contact:
+        if (gripper_id == contact.geom1 and object_id == contact.geom2) or (
+            object_id == contact.geom1 and gripper_id == contact.geom2
+        ):
+            return True
+    return False

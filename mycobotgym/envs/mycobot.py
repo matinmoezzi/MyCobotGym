@@ -36,7 +36,7 @@ class MyCobotEnv(MujocoEnv):
         controller_type: Literal["mocap", "IK", "joint", "delta_joint"] = "IK",
         obj_range: float = 0.1,
         target_in_the_air=True,
-        distance_threshold=0.05,
+        distance_threshold=0.01,
         initial_qpos: dict = {},
         fetch_env: bool = False,
         reward_type="sparse",
@@ -284,7 +284,7 @@ class MyCobotEnv(MujocoEnv):
 
     def _is_success(self, achieved_goal, desired_goal):
         d = goal_distance(achieved_goal, desired_goal)
-        return (d < self.distance_threshold).astype(np.float32)
+        return d < self.distance_threshold
 
     def compute_reward(self, achieved_goal, goal, info):
         # Compute distance between goal and the achieved goal.
@@ -294,8 +294,7 @@ class MyCobotEnv(MujocoEnv):
         elif self.reward_type == "dense":
             return -d
         elif self.reward_type == "reward_shaping":
-            reward = int(self._is_success(achieved_goal, goal))
-            reward += max(self.stage_rewards())
+            reward = max(self.stage_rewards()) * 100
             return reward
 
     def _step_callback(self):
@@ -396,14 +395,8 @@ class MyCobotEnv(MujocoEnv):
 
     def compute_truncated(self, achievec_goal, desired_goal, info):
         """The environments will be truncated only if setting a time limit with max_steps which will automatically wrap the environment in a gymnasium TimeLimit wrapper."""
-        return False
-
-    def _check_contact(self, gripper_id, object_id):
-        for contact in self.data.contact:
-            if (gripper_id == contact.geom1 and object_id == contact.geom2) or (
-                object_id == contact.geom1 and gripper_id == contact.geom2
-            ):
-                return True
+        if info["is_success"]:
+            return True
         return False
 
     def stage_rewards(self):
@@ -420,17 +413,16 @@ class MyCobotEnv(MujocoEnv):
                 - (float) placing reward
         """
 
-        reach_mult = 0.1
-        grasp_mult = 0.35
-        lift_mult = 0.5
-        place_mult = 0.7
+        reach_mult = 0.2
+        grasp_mult = 0.5
+        lift_mult = 0.9
 
         grip_pos = mujoco_utils.get_site_xpos(self.model, self.data, "EEF")
         object_pos = mujoco_utils.get_site_xpos(self.model, self.data, "object0")
         target_pos = mujoco_utils.get_site_xpos(self.model, self.data, "target0")
 
         r_reach = 0.0
-        r_reach = (1 - np.tanh(10 * goal_distance(grip_pos, object_pos))) * reach_mult
+        r_reach = (1 - np.tanh(goal_distance(grip_pos, object_pos))) * reach_mult
 
         right_finger_layer = mujoco.mj_name2id(
             self.model, mujoco.mjtObj.mjOBJ_GEOM, "right_finger_layer"
@@ -441,31 +433,19 @@ class MyCobotEnv(MujocoEnv):
         object_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, "object0")
         r_grasp = (
             int(
-                self._check_contact(right_finger_layer, object_id)
-                and self._check_contact(left_finger_layer, object_id)
+                check_contact(self.data, right_finger_layer, object_id)
+                and check_contact(self.data, left_finger_layer, object_id)
             )
             * grasp_mult
         )
 
         r_lift = 0.0
         if r_grasp > 0.0:
-            z_target = target_pos[2] + 0.01
-            object_z_loc = object_pos[2]
-            z_dists = np.maximum(z_target - object_z_loc, 0.0)
-            r_lift = grasp_mult + (1 - np.tanh(15.0 * z_dists)) * (
-                lift_mult - grasp_mult
-            )
+            r_lift = grasp_mult + (
+                1 - np.tanh(goal_distance(object_pos, target_pos))
+            ) * (lift_mult - grasp_mult)
 
-        y_check = np.abs(object_pos[1] - target_pos[1]) < 0.01
-        x_check = np.abs(object_pos[0] - target_pos[0]) < 0.01
-        is_above_target = x_check and y_check
-        dist = np.linalg.norm(target_pos[:2] - object_pos[:2])
-        if is_above_target:
-            r_place = lift_mult + (1 - np.tanh(10.0 * dist)) * (place_mult - lift_mult)
-        else:
-            r_place = r_lift + (1 - np.tanh(10.0 * dist)) * (place_mult - lift_mult)
-
-        return r_reach, r_grasp, r_lift, r_place
+        return r_reach, r_grasp, r_lift
 
     def _env_setup(self):
         if self.fetch_env:
