@@ -11,21 +11,14 @@ from gymnasium_robotics.utils import rotations
 from gymnasium_robotics.utils.mujoco_utils import MujocoModelNames
 
 
-def create_random_3d_coord(lower_bound, upper_bound):
-    """
-    Create a random 3D coordinate within the specified ranges.
-    The function accepts two arguments, lower_bound and upper_bound, for each axis.
-    """
-    coord = []
-    for _ in range(3):
-        # Choose whether to use the lower or upper range for each axis
-        if random.choice([True, False]):
-            # Lower range
-            coord.append(random.uniform(lower_bound[0], lower_bound[1]))
-        else:
-            # Upper range
-            coord.append(random.uniform(upper_bound[0], upper_bound[1]))
-    return np.array(coord)
+def generate_random_point_inside_rectangle(x_lower, x_upper, y_lower, y_upper):
+    # Generate a random x coordinate within the x bounds
+    x = random.uniform(x_lower, x_upper)
+
+    # Generate a random y coordinate within the y bounds
+    y = random.uniform(y_lower, y_upper)
+
+    return (x, y)
 
 
 def goal_distance(goal_a, goal_b):
@@ -511,7 +504,9 @@ def combine_images(image1, image2, image3, image4):
 
     return combined_image
 
+
 import cv2
+
 
 def preprocess_frame(frame, size=(128, 128)):
     """

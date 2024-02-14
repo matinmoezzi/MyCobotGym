@@ -80,7 +80,7 @@
 
     <geom type="plane" size="2 2 2" pos="0 0 0" rgba="0.2 0.2 0.2 1" />
 
-    <site name="target0" pos="0 0 0.21" size="0.01 0.01 0.01" rgba="0 1 0 1"
+    <site name="target0" pos="-0.15 0 0.21" size="0.01 0.01 0.01" rgba="0 1 0 1"
       type="box"></site>
 
     <body name="table" pos="0 0 0">
@@ -257,7 +257,7 @@
       </body>
     </body>
 
-    <body name="object0" pos="0.1 0 0.21">
+    <body name="object0" pos="-0.05 0 0.21">
       <joint name="object0:joint" type="free" damping="0.01"></joint>
       <geom size="0.01 0.01 0.01" type="box" condim="4" name="object0"
         solimp="0.999 0.999 0.001" solref="0.001 1" friction="0.95 0.3 0.1"></geom>
