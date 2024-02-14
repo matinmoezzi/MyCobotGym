@@ -542,40 +542,14 @@ class MyCobotImgEnv(MyCobotEnv):
         return self.mujoco_renderer.render("rgb_array", camera_name=cam_name)
 
     def _get_obs(self):
-        images_sensors = [
-            preprocess_frame(self._get_rgb_image_from_cam(name))
-            for name in ["birdview", "gripper_camera_rgb", "sideview", "frontview"]
-        ]
-        combined_image = np.stack(images_sensors)
+        frame = preprocess_frame(self._get_rgb_image_from_cam("sideview"))
 
-        # import matplotlib.pyplot as plt
-        # from PIL import Image
+        import matplotlib.pyplot as plt
+        from PIL import Image
 
-        # img1 = Image.fromarray(images_sensors[0])
-        # img2 = Image.fromarray(images_sensors[1])
-        # img3 = Image.fromarray(images_sensors[2])
-        # img4 = Image.fromarray(images_sensors[3])
-
-        # # Create a figure to hold the subplots
-        # fig, axs = plt.subplots(2, 2)  # This creates a 2x2 grid of subplots
-
-        # # Show each image in its respective subplot
-        # axs[0, 0].imshow(img1)
-        # axs[0, 0].axis('off')  # Remove axis ticks and labels
-
-        # axs[0, 1].imshow(img2)
-        # axs[0, 1].axis('off')
-
-        # axs[1, 0].imshow(img3)
-        # axs[1, 0].axis('off')
-
-        # axs[1, 1].imshow(img4)
-        # axs[1, 1].axis('off')
-
-        # # Optionally, adjust spacing between the images
-        # plt.subplots_adjust(wspace=0.1, hspace=0.1)  # Adjust space as needed
-
-        # plt.show()
+        img1 = Image.fromarray(frame)
+        plt.imshow(img1)
+        plt.show()
 
         grip_pos = mujoco_utils.get_site_xpos(self.model, self.data, "EEF")
         object_pos = mujoco_utils.get_site_xpos(self.model, self.data, "object0")
@@ -585,7 +559,7 @@ class MyCobotImgEnv(MyCobotEnv):
             self.achieved_goal = np.squeeze(object_pos.copy())
 
         self.grip_pos = grip_pos.copy()
-        return combined_image
+        return frame 
 
     def _init_obs_space(self, obs):
         self.observation_space = spaces.Box(0, 255, shape=obs.shape, dtype=np.uint8)
