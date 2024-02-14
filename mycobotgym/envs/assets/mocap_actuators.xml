@@ -1,0 +1,7 @@
+<mujoco>
+    <actuator>
+        <general biastype="affine" name="fingers_actuator" tendon="split" forcerange="-5 5"
+            ctrlrange="0 1" gainprm="70 0 0" biasprm="0 -100 -10" forcelimited="true"
+            ctrllimited="true" />
+    </actuator>
+</mujoco>

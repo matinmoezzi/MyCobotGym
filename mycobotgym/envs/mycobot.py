@@ -215,8 +215,8 @@ class MyCobotEnv(MujocoEnv):
         mujoco.mj_forward(self.model, self.data)
 
         # Randomize object location
+        object_xpos = self.initial_gripper_xpos[:2]
         if self.has_object:
-            object_xpos = self.initial_gripper_xpos[:2]
             while np.linalg.norm(object_xpos - self.initial_gripper_xpos[:2]) < 0.1:
                 object_xpos = self._sample_goal()[:2]
             object_qpos = mujoco_utils.get_joint_qpos(
@@ -373,9 +373,9 @@ class MyCobotEnv(MujocoEnv):
             object_rel_pos = object_pos - grip_pos
             object_velp -= grip_velp
         else:
-            object_pos = (
-                object_rot
-            ) = object_velp = object_velr = object_rel_pos = np.zeros(0)
+            object_pos = object_rot = object_velp = object_velr = object_rel_pos = (
+                np.zeros(0)
+            )
         gripper_state = robot_qpos[-2:]
 
         gripper_vel = (
@@ -552,7 +552,7 @@ class MyCobotImgEnv(MyCobotEnv):
             preprocess_frame(self._get_rgb_image_from_cam(name))
             for name in ["birdview", "gripper_camera_rgb", "sideview", "frontview"]
         ]
-        combined_image = np.stack(images_sensors) 
+        combined_image = np.stack(images_sensors)
 
         # import matplotlib.pyplot as plt
         # from PIL import Image
@@ -589,7 +589,7 @@ class MyCobotImgEnv(MyCobotEnv):
             self.achieved_goal = grip_pos.copy()
         else:
             self.achieved_goal = np.squeeze(object_pos.copy())
-        
+
         self.grip_pos = grip_pos.copy()
         return combined_image
 
