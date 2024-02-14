@@ -23,7 +23,7 @@ def generate_random_point_inside_rectangle(x_lower, x_upper, y_lower, y_upper):
 
 def goal_distance(goal_a, goal_b):
     assert goal_a.shape == goal_b.shape
-    return np.linalg.norm(goal_a - goal_b)
+    return np.linalg.norm(goal_a - goal_b, axis=-1)
 
 
 def print_state(model, data):
