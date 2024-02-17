@@ -236,7 +236,7 @@ class MyCobotEnv(MujocoEnv):
         return obs
 
     def _sample_goal(self):
-        x_g, y_g = generate_random_point_inside_rectangle(-0.15, 0.15, -0.06, 0.08)
+        x_g, y_g = generate_random_point_inside_rectangle(-0.12, 0.12, -0.06, 0.06)
         goal = [x_g, y_g, self.height_offset]
         if self.target_in_the_air and self.np_random.uniform() < 0.5:
             goal[2] += self.np_random.uniform(0, 0.1)
@@ -284,7 +284,7 @@ class MyCobotEnv(MujocoEnv):
 
     def _is_success(self, achieved_goal, desired_goal):
         d = goal_distance(achieved_goal, desired_goal)
-        return (d < self.distance_threshold)
+        return d < self.distance_threshold
 
     def compute_reward(self, achieved_goal, goal, info):
         # Compute distance between goal and the achieved goal.

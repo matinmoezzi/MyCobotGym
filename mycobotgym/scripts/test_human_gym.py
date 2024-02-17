@@ -17,7 +17,7 @@ def print_contacts(model, data):
 
 # env = gym.make("FetchReach-v3", render_mode="human")
 # env = gym.make("MyCobotFetchReach-v1", render_mode="human")
-env = gym.make("MyCobotPickAndPlace-Sparse-joint-v0", render_mode="human")
+env = gym.make("MyCobotFetchPickAndPlace-Sparse-mocap-v0", render_mode="human")
 # env = gym.make("MyCobotReach-Sparse-IK-v0", render_mode="human")
 
 # env = env.env.env
