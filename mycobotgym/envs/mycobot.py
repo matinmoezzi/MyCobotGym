@@ -236,7 +236,7 @@ class MyCobotEnv(MujocoEnv):
         return obs
 
     def _sample_goal(self):
-        x_g, y_g = generate_random_point_inside_rectangle(-0.15, 0.15, -0.06, 0.1)
+        x_g, y_g = generate_random_point_inside_rectangle(-0.15, 0.15, -0.06, 0.08)
         goal = [x_g, y_g, self.height_offset]
         if self.target_in_the_air and self.np_random.uniform() < 0.5:
             goal[2] += self.np_random.uniform(0, 0.1)
